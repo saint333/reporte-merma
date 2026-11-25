@@ -30,7 +30,20 @@ Plan de migración del libro `REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK` a una apli
 
 ## Estado
 
-Solo documentación. El Excel original está en la raíz del proyecto y no se modifica; el plan prevé copiarlo a `data/source/` al iniciar el Paso 2. El código se construye siguiendo los pasos 1 a 7.
+- **Paso 1 implementado:** esquema Postgres, migraciones SQL y verificación en `apps/api`.
+- Pasos 2 a 7: planificados en `docs/`.
+- El Excel original está en la raíz y no se modifica; se copiará a `data/source/` al iniciar el Paso 2.
+
+### Levantar el esquema local
+
+```bash
+docker compose up -d db
+cd apps/api
+npm install
+cp .env.example .env
+npm run db:migrate
+npm run db:check     # 6 tablas · 2 vistas · 13 motivos · 3 parámetros
+```
 
 ## Antes de empezar
 

@@ -301,8 +301,12 @@ Nota: `tasa_global` debe calcularse como **promedio de los totales semanales** (
 Se aplican con `postgres-migrations`, que registra cada archivo en la tabla `migrations` y ejecuta cada uno dentro de una transacción:
 
 ```bash
+docker compose up -d db
 cd apps/api
+npm install
+cp .env.example .env
 npm run db:migrate          # tsx scripts/migrate.ts
+npm run db:check            # 6 tablas · 2 vistas · 13 motivos · 3 parámetros
 ```
 
 **Prohibido:** crear o alterar tablas desde el código de la API al arrancar (`CREATE TABLE IF NOT EXISTS` en `server.ts`). El esquema se aplica solo con `npm run db:migrate`.
@@ -311,11 +315,11 @@ npm run db:migrate          # tsx scripts/migrate.ts
 
 ## 8. Entregables del paso
 
-- [ ] `apps/api/db/migrations/*.sql` con las 5 tablas, vistas, índices y seeds.
-- [ ] `apps/api/scripts/migrate.ts` con la conexión y el orden de ejecución.
+- [x] `apps/api/db/migrations/*.sql` con las 6 tablas, vistas, índices y seeds.
+- [x] `apps/api/scripts/migrate.ts` con la conexión y el orden de ejecución.
 - [ ] `docs/modelo/diccionario-datos.md` generado (o este documento como fuente).
-- [ ] Script `scripts/check_schema.sql` que valide conteos: 13 motivos, 108 materiales, 3 parámetros.
-- [ ] Base local levantada con Docker Compose (`postgres:16-alpine`) y migración aplicada.
+- [x] `apps/api/scripts/check_schema.sql`: 6 tablas, 2 vistas, 13 motivos y 3 parámetros (los 108 materiales se validan en el Paso 2).
+- [x] Base local levantada con Docker Compose (`postgres:16-alpine`) y migración aplicada.
 
 ---
 
@@ -324,7 +328,7 @@ npm run db:migrate          # tsx scripts/migrate.ts
 | # | Criterio | Cómo se comprueba |
 |---|---|---|
 | 1 | `npm run db:migrate` corre desde cero sin error | Base vacía + comando |
-| 2 | Existen 5 tablas, 2 vistas, 3 parámetros | `\dt`, `\dv`, `select * from parametro` |
+| 2 | Existen 6 tablas, 2 vistas, 3 parámetros | `npm run db:check` |
 | 3 | Ningún campo monetario es `float`/`double` | Inspección del DDL |
 | 4 | Insertar un registro con motivo inexistente falla por FK | `insert` de prueba |
 | 5 | `v_abc` ordena por costo y asigna A/B/C sin depender del orden de inserción | Insertar en orden aleatorio y comparar |
