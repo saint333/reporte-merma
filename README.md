@@ -35,9 +35,10 @@ Plan de migración del libro `REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK` a una apli
 - **Paso 2 implementado:** ETL en TypeScript con `dry-run`, `append`, `replace` y reporte de calidad.
 - **Paso 3 completo:** API Fastify con `/api/v1/salud`, `/meta`, `/kpis`, `/series/mensual`, `/series/semanal`, `/cortes/:dimension`, `/pareto`, `/proyeccion`, `/registros`, `/registros.csv` y `/alertas`; filtros Zod, caché TTL, Swagger UI en `/docs`, helmet, rate limit y pruebas de paridad.
 - **Paso 4 implementado:** SPA React con dashboard, registros y análisis; filtros en URL, cinco gráficas, Pareto, matriz de gestión, alertas, export CSV y estados de carga/error. Build y pruebas del frontend en `apps/web`.
-- **Paso 5 preparado:** Blueprint de Render, imagen Docker de la API y configuración de Netlify listos; falta ejecutar el despliegue real y validar CORS con las URLs públicas.
+- **Carga desde la web:** `POST /api/v1/cargas` recibe el `.xlsx` (multipart) y ejecuta el mismo ETL; la pestaña **Cargas** muestra el resumen y el historial. No pide clave salvo que definas `ADMIN_TOKEN`. `GET /api/v1/cargas` lista las cargas registradas.
+- **Paso 5 preparado:** Blueprint de Render, imagen Docker, configuración de Netlify y `.github/workflows/ci.yml` (pruebas → migraciones en Neon → Deploy Hook). Falta ejecutar el despliegue real y validar CORS con las URLs públicas.
 - Pasos 6 y 7: planificados en `docs/`.
-- El Excel original está en la raíz y no se modifica; el ETL lo lee por ruta y no se versiona.
+- El Excel original está en la raíz y no se modifica; el ETL lo acepta por ruta (CLI) o por multipart (web) y no se versiona.
 
 ### Levantar el frontend
 
@@ -59,6 +60,15 @@ npm test
 npm run build
 ```
 
+### Cargar datos
+
+Desde la web: arranca la API y sube el `.xlsx` en `http://localhost:5173/cargas` (la clave solo se pide si defines `ADMIN_TOKEN`, mínimo 16 caracteres, en `apps/api/.env`). También por terminal, como antes:
+
+```bash
+cd apps/api
+npm run etl -- --file "../../REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK (1) (6).xlsx" --mode append
+```
+
 ### Despliegue
 
 La configuración está preparada en el repositorio:
@@ -67,7 +77,7 @@ La configuración está preparada en el repositorio:
 - `apps/api/Dockerfile` construye la imagen de producción.
 - `netlify.toml` define el build de `apps/web`, el fallback SPA y las cabeceras.
 
-Variables mínimas: `DATABASE_URL` y `CORS_ORIGINS` en Render; `VITE_API_URL` en Netlify. El procedimiento completo, incluida la carga de Neon y la verificación de CORS, está en [`docs/operacion/despliegue.md`](docs/operacion/despliegue.md).
+Variables mínimas: `DATABASE_URL` y `CORS_ORIGINS` en Render; `VITE_API_URL` en Netlify. `ADMIN_TOKEN` es opcional: si lo defines, la carga desde la web pide clave. El procedimiento completo, incluida la carga de Neon, la subida del Excel desde la web y la verificación de CORS, está en [`docs/operacion/despliegue.md`](docs/operacion/despliegue.md).
 
 ### Levantar el esquema local
 

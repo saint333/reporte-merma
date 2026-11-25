@@ -87,12 +87,18 @@ suite("ETL contra Postgres de prueba", () => {
   });
 
   it("carga dos filas y no duplica en un segundo append", async () => {
-    const primero = await ejecutar(archivo, "append", { pool, reportDir: dir });
+    const primero = await ejecutar({ ruta: archivo }, "append", {
+      pool,
+      reportDir: dir,
+    });
     expect(primero.insertadas).toBe(2);
     expect(primero.errores).toBe(0);
     expect(primero.costo_total).toBe("7.0000");
 
-    const segundo = await ejecutar(archivo, "append", { pool, reportDir: dir });
+    const segundo = await ejecutar({ ruta: archivo }, "append", {
+      pool,
+      reportDir: dir,
+    });
     expect(segundo.ya_cargado).toBe(true);
     expect(segundo.insertadas).toBe(0);
 
@@ -104,7 +110,10 @@ suite("ETL contra Postgres de prueba", () => {
   });
 
   it("replace reinserta y deja la carga anterior revertida", async () => {
-    const reporte = await ejecutar(archivo, "replace", { pool, reportDir: dir });
+    const reporte = await ejecutar({ ruta: archivo }, "replace", {
+      pool,
+      reportDir: dir,
+    });
     expect(reporte.insertadas).toBe(2);
 
     const cargas = await pool.query<{ estado: string; n: number }>(

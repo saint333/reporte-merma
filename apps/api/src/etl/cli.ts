@@ -35,7 +35,9 @@ if (modo === "replace" && !values.confirm) {
 const pool = crearPool();
 
 try {
-  const reporte = await ejecutar(path.resolve(values.file), modo, { pool });
+  const reporte = await ejecutar({ ruta: path.resolve(values.file) }, modo, {
+    pool,
+  });
   console.log(JSON.stringify(reporte, null, 2));
 } finally {
   await pool.end();

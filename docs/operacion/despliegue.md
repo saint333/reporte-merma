@@ -8,8 +8,9 @@ Configuración incluida en el repositorio:
 | `apps/api/Dockerfile` | Imagen de producción de la API |
 | `apps/api/.dockerignore` | Evita enviar `.env`, tests y artefactos al contexto Docker |
 | `netlify.toml` | Build de la SPA, fallback de rutas y cabeceras |
+| `.github/workflows/ci.yml` | Pruebas, migraciones en Neon y Deploy Hook de Render |
 
-El despliegue real no se ejecuta desde el repositorio. Los pasos siguientes se completan en los paneles de Neon, Render y Netlify.
+El primer despliegue se completa en los paneles de Neon, Render y Netlify. A partir de ahí, cada push a `main` pasa por GitHub Actions (pruebas + migraciones + Deploy Hook) y Netlify reconstruye la web desde su integración con Git.
 
 ## 1. Variables de producción
 
@@ -23,6 +24,8 @@ El despliegue real no se ejecuta desde el repositorio. Los pasos siguientes se c
 | `TZ` | `America/Lima` | No | `render.yaml` |
 | `CACHE_TTL_SECONDS` | `60` | No | `render.yaml` |
 | `RATE_LIMIT_MAX` | `600` | No | `render.yaml` |
+| `ADMIN_TOKEN` | vacío (carga sin clave) | Opcional | panel de Render |
+| `UPLOAD_MAX_MB` | `20` | No | `render.yaml` |
 
 `PORT` lo inyecta Render y no se define a mano. `CORS_ORIGINS` acepta varios orígenes separados por coma, sin barra final:
 
@@ -58,7 +61,7 @@ npm run etl -- --file "../../REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK (1) (6).xlsx
 npm run etl -- --file "../../REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK (1) (6).xlsx" --mode append
 ```
 
-El Excel no se versiona. El ETL se ejecuta localmente contra Neon; no forma parte del arranque de Render.
+El Excel no se versiona. La carga inicial se hace desde tu máquina; a partir de ahí los reportes nuevos se suben desde la pantalla **Cargas** de la web (ver §5). El ETL no forma parte del arranque de Render.
 
 Comprobar la carga:
 
@@ -110,9 +113,50 @@ Prueba funcional mínima:
 - [ ] El filtro `2026-09` muestra `$9,108.95`.
 - [ ] Recargar una URL con filtros conserva la selección.
 - [ ] El CSV descarga correctamente.
+- [ ] La pestaña **Cargas** lista el historial y sube el mismo archivo con `ya_cargado: true`.
+- [ ] Un push a `main` dispara el workflow y el deploy de Render queda **Live**.
 - [ ] En móvil (375 px) no hay scroll horizontal.
 
-## 5. Operación
+## 5. Cargar datos desde la web
+
+La ruta **Cargas** de la SPA envía el `.xlsx` a `POST /api/v1/cargas` y la API ejecuta el mismo ETL que la CLI, sin acceso al sistema de archivos.
+
+1. Abrir `https://<sitio>.netlify.app/cargas`.
+2. Elegir el archivo y el modo. La clave solo se pide si definiste `ADMIN_TOKEN` en Render:
+   - **Agregar** (`append`): inserta filas nuevas y omite las que ya existen por hash.
+   - **Reemplazar** (`replace`): revierte la carga previa del mismo archivo y la reinserta. Exige marcar la confirmación.
+3. Revisar el resumen: insertadas, omitidas, errores, rango y costo total.
+
+Reglas del endpoint:
+
+- **No pide clave por defecto.** Si defines `ADMIN_TOKEN` (mínimo 16 caracteres) en Render, exige la cabecera `x-admin-token` y el formulario muestra el campo. `GET /api/v1/salud` publica `carga_requiere_token` para que la web sepa si mostrarlo.
+- Sin `ADMIN_TOKEN`, cualquiera que conozca la URL del sitio puede subir un archivo y, en modo `replace`, reemplazar los hechos de la carga anterior de ese mismo archivo. Define el token si el sitio deja de ser privado.
+- Límite de 20 MB (`UPLOAD_MAX_MB`), solo `.xlsx`, y 6 cargas por minuto por IP.
+- El archivo se procesa en memoria y la carga queda registrada en `merma.carga` con su hash.
+- Al terminar, la API invalida la caché de KPIs, series, cortes, Pareto y alertas.
+- Si el hash ya existe y el modo es `append`, responde `200` con `ya_cargado: true` y no escribe nada.
+
+Los errores de validación devuelven `422 ARCHIVO_INVALIDO` con el mensaje del ETL (hoja faltante, valor unitario inválido, etc.). El historial se consulta con `GET /api/v1/cargas`.
+
+## 6. Integración continua
+
+`.github/workflows/ci.yml` tiene dos jobs:
+
+| Job | Cuándo | Qué hace |
+|---|---|---|
+| `pruebas` | push y PR | Postgres 16 de servicio, migraciones, typecheck y tests de la API; typecheck, tests y build de la web |
+| `desplegar-api` | push a `main` | `db:migrate` contra Neon, `POST` al Deploy Hook de Render y espera de `/api/v1/salud` |
+
+Secretos en GitHub → **Settings → Secrets and variables → Actions**:
+
+| Secreto | Valor |
+|---|---|
+| `NEON_DATABASE_URL` | cadena directa de Neon (sin `-pooler`). El pooler no garantiza los advisory locks de `postgres-migrations` |
+| `RENDER_DEPLOY_HOOK_URL` | Render → `merma-api` → Settings → Deploy Hook |
+
+`render.yaml` fija `autoDeploy: false` justamente para que el deploy ocurra después de migrar. Si prefieres que Render despliegue por su cuenta, ponlo en `true` aceptando que un cambio de esquema puede dejar la API en 503 hasta que corras `npm run db:migrate`.
+
+## 7. Operación
 
 - **Migraciones:** ejecutar `npm run db:migrate` contra `DATABASE_URL` antes de desplegar cambios de esquema.
 - **Rollback de Render:** Deploys → seleccionar el deploy anterior → **Rollback**.

@@ -4,6 +4,7 @@ import { getJson } from "./api";
 import { paramsFiltros } from "./filters";
 import type {
   Alerta,
+  CargaHistorial,
   Envelope,
   FilaCorte,
   FilaPareto,
@@ -65,6 +66,17 @@ export type QueryRegistros = Filtros & {
 export const saludQuery = queryOptions({
   queryKey: ["salud"],
   queryFn: ({ signal }) => getJson<Salud>("/api/v1/salud", {}, signal),
+  ...COMUN,
+});
+
+export const cargasQuery = queryOptions({
+  queryKey: ["cargas"],
+  queryFn: ({ signal }) =>
+    getJson<Envelope<CargaHistorial[]>>(
+      "/api/v1/cargas",
+      { limite: 20 },
+      signal,
+    ).then((respuesta) => respuesta.data),
   ...COMUN,
 });
 

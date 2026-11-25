@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
+import multipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
@@ -11,6 +12,7 @@ import type { Pool } from "pg";
 import { CacheApi } from "./http/cache.js";
 import { registrarErrores } from "./http/errores.js";
 import { registrarAlertas } from "./routes/alertas.js";
+import { registrarCargas } from "./routes/cargas.js";
 import { registrarCortes } from "./routes/cortes.js";
 import { registrarKpis } from "./routes/kpis.js";
 import { registrarMeta } from "./routes/meta.js";
@@ -37,6 +39,8 @@ export async function buildApp(opciones: {
   logger?: boolean;
   cacheTtlSeconds?: number;
   rateLimitMax?: number;
+  adminToken?: string | null;
+  uploadMaxBytes?: number;
 }): Promise<FastifyInstance> {
   const {
     pool,
@@ -44,6 +48,8 @@ export async function buildApp(opciones: {
     logger = true,
     cacheTtlSeconds = 60,
     rateLimitMax = 600,
+    adminToken = null,
+    uploadMaxBytes = 20 * 1024 * 1024,
   } = opciones;
 
   const app = Fastify({
@@ -66,8 +72,12 @@ export async function buildApp(opciones: {
   });
   await app.register(cors, {
     origin: corsOrigins,
-    methods: ["GET", "OPTIONS"],
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["content-type", "x-admin-token", "x-request-id"],
     credentials: false,
+  });
+  await app.register(multipart, {
+    limits: { fileSize: uploadMaxBytes, files: 1, fields: 4 },
   });
 
   await app.register(swagger, {
@@ -90,6 +100,7 @@ export async function buildApp(opciones: {
         { name: "Proyección", description: "Escenarios de cierre" },
         { name: "Registros", description: "Detalle paginado y CSV" },
         { name: "Alertas", description: "Calidad y concentración" },
+        { name: "Cargas", description: "Carga del Excel desde la web" },
       ],
     },
   });
@@ -115,7 +126,9 @@ export async function buildApp(opciones: {
   });
 
   registrarErrores(app);
-  registrarSalud(app, pool, "0.1.0");
+  registrarSalud(app, pool, "0.1.0", {
+    requiereTokenCarga: Boolean(adminToken),
+  });
   registrarMeta(app, pool);
   registrarKpis(app, pool);
   registrarSeries(app, pool);
@@ -124,6 +137,7 @@ export async function buildApp(opciones: {
   registrarProyeccion(app, pool);
   registrarRegistros(app, pool);
   registrarAlertas(app, pool);
+  registrarCargas(app, pool, { adminToken, maxBytes: uploadMaxBytes });
 
   return app;
 }

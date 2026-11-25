@@ -10,12 +10,18 @@ services:
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: ./apps/api
     healthCheckPath: /api/v1/salud
-    autoDeploy: true
+    # El deploy lo dispara GitHub Actions con el Deploy Hook, después de migrar Neon.
+    # Si se deja en true, la API puede arrancar antes de que exista el esquema.
+    autoDeploy: false
     envVars:
       - key: DATABASE_URL
         sync: false
       - key: CORS_ORIGINS
         sync: false
+      # Opcional: si se define (mínimo 16 caracteres), la carga desde la web
+      # exige la cabecera x-admin-token. Sin ella la carga queda abierta.
+      - key: UPLOAD_MAX_MB
+        value: "20"
       - key: APP_ENV
         value: production
       - key: TZ

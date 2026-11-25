@@ -445,10 +445,12 @@ async function insertarEventos(
 
 async function escribirReporte(
   reporte: Reporte,
-  directorio: string,
+  directorio: string | null,
   inicio: number,
 ): Promise<Reporte> {
   reporte.duracion_ms = Date.now() - inicio;
+  if (!directorio) return reporte;
+
   await mkdir(directorio, { recursive: true });
 
   const sello = new Date().toISOString().replace(/\D/g, "").slice(0, 17);
@@ -459,18 +461,33 @@ async function escribirReporte(
   return reporte;
 }
 
+export type FuenteXlsx =
+  | { ruta: string }
+  | { bytes: Buffer; nombre: string };
+
 export async function ejecutar(
-  ruta: string,
+  fuente: FuenteXlsx,
   modo: Modo = "append",
-  opciones: { pool: Pool; reportDir?: string },
+  opciones: {
+    pool: Pool;
+    reportDir?: string;
+    guardarReporte?: boolean;
+  },
 ): Promise<Reporte> {
   const inicio = Date.now();
-  const { pool, reportDir = DIR_REPORTES } = opciones;
+  const {
+    pool,
+    reportDir = DIR_REPORTES,
+    guardarReporte = true,
+  } = opciones;
+  const destinoReporte = guardarReporte ? reportDir : null;
 
-  const bytes = await readFile(ruta);
+  const bytes = "bytes" in fuente ? fuente.bytes : await readFile(fuente.ruta);
+  const nombre = "bytes" in fuente ? fuente.nombre : path.basename(fuente.ruta);
   const archivoHash = hashArchivo(bytes);
   const wb = new ExcelJS.Workbook();
-  await wb.xlsx.readFile(ruta);
+  // @types/node 22 declara Buffer genérico y ExcelJS espera el Buffer clásico.
+  await wb.xlsx.load(bytes as unknown as Parameters<typeof wb.xlsx.load>[0]);
 
   const faltantes = HOJAS.filter((hoja) => !wb.getWorksheet(hoja));
   if (faltantes.length > 0) {
@@ -494,7 +511,7 @@ export async function ejecutar(
 
     const lectura = leerRegistro(wb, materiales, catalogo, alias);
     const reporte: Reporte = {
-      archivo: path.basename(ruta),
+      archivo: nombre,
       hash: archivoHash,
       modo,
       leidas: lectura.leidas,
@@ -540,7 +557,7 @@ export async function ejecutar(
 
     if (previas.length > 0 && modo !== "replace") {
       reporte.ya_cargado = true;
-      return await escribirReporte(reporte, reportDir, inicio);
+      return await escribirReporte(reporte, destinoReporte, inicio);
     }
 
     let aInsertar = lectura.eventos;
@@ -560,7 +577,7 @@ export async function ejecutar(
     }
 
     if (modo === "dry-run") {
-      return await escribirReporte(reporte, reportDir, inicio);
+      return await escribirReporte(reporte, destinoReporte, inicio);
     }
 
     await client.query("begin");
@@ -616,7 +633,7 @@ export async function ejecutar(
     await client.query("commit");
     enTransaccion = false;
 
-    return await escribirReporte(reporte, reportDir, inicio);
+    return await escribirReporte(reporte, destinoReporte, inicio);
   } catch (error) {
     if (enTransaccion) await client.query("rollback");
     throw error;

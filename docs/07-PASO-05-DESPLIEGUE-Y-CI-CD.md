@@ -141,6 +141,8 @@ Swagger: http://localhost:8000/docs
 | `TZ` | `America/Lima` | No |
 | `CACHE_TTL_SECONDS` | `60` | No |
 | `RATE_LIMIT_MAX` | `600` | No |
+| `ADMIN_TOKEN` | vacío por defecto; opcional (mínimo 16 caracteres) | **Sí**, si se define |
+| `UPLOAD_MAX_MB` | `20` | No |
 
 ### 5.4 Migraciones en el servicio
 
@@ -152,7 +154,9 @@ export DATABASE_URL="postgresql://…?sslmode=require"
 npm run db:migrate
 ```
 
-Si se prefiere automatizar, crear un **Job** en Render con `npm ci && npm run db:migrate` y ejecutarlo antes del deploy. La imagen de producción no incluye `tsx`: el script de migración vive en `scripts/migrate.ts` y se ejecuta en la máquina que despliega, no en el contenedor.
+Con el pipeline actual esto lo hace GitHub Actions antes de disparar el Deploy Hook (§8.2). La imagen de producción no incluye `tsx`: el script de migración vive en `scripts/migrate.ts` y se ejecuta en la máquina que despliega o en el runner, nunca en el contenedor.
+
+La carga del Excel desde la web funciona **sin clave**: `ADMIN_TOKEN` es opcional y no se declara en `render.yaml`. Si lo defines en el panel de Render, `POST /api/v1/cargas` exige la cabecera `x-admin-token` y la pantalla **Cargas** muestra el campo (lo detecta por `carga_requiere_token` en `/salud`). Sin token, cualquiera con la URL del sitio puede subir archivos, así que actívalo si el sitio deja de ser privado.
 
 ### 5.5 Verificación
 
@@ -219,72 +223,33 @@ Opcional: subdominio de API (`api.merma.…`) con CNAME a Render y certificado g
 
 ```text
 feature/*  → PR → main
-main       → deploy automático a producción (Render + Netlify)
-PR         → Deploy Preview de Netlify + tests de GitHub Actions
+main       → pruebas + migraciones en Neon + Deploy Hook de Render (API)
+             Netlify reconstruye la web desde su integración con Git
+PR         → pruebas en GitHub Actions + Deploy Preview de Netlify
 ```
 
 ### 8.2 GitHub Actions (`.github/workflows/ci.yml`)
 
-```yaml
-name: CI
+| Job | Cuándo | Qué hace |
+|---|---|---|
+| `pruebas` | push y PR | Postgres 16 de servicio, `db:migrate`, typecheck y tests de la API; typecheck, tests y build de la web |
+| `desplegar-api` | push a `main` | `db:migrate` contra Neon, `POST` al Deploy Hook de Render y espera de `/api/v1/salud` |
 
-on:
-  pull_request:
-  push:
-    branches: [main]
+Secretos necesarios en el repositorio (**Settings → Secrets and variables → Actions**):
 
-jobs:
-  api:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: merma_test
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd="pg_isready -U test" --health-interval=5s
-          --health-timeout=5s --health-retries=10
-    env:
-      DATABASE_URL: postgresql://test:test@localhost:5432/merma_test
-      APP_ENV: test
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm, cache-dependency-path: apps/api/package-lock.json }
-      - run: npm ci
-        working-directory: apps/api
-      - run: npm run db:migrate
-        working-directory: apps/api
-      - run: npm run etl -- --file "../../data/source/REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK (1) (6).xlsx" --mode append
-        working-directory: apps/api
-      - run: npm test -- --run
-        working-directory: apps/api
+| Secreto | Uso |
+|---|---|
+| `NEON_DATABASE_URL` | cadena **directa** de Neon (sin `-pooler`), para migrar |
+| `RENDER_DEPLOY_HOOK_URL` | Deploy Hook del servicio `merma-api` (Render → Settings → Deploy Hook) |
 
-  web:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm, cache-dependency-path: apps/web/package-lock.json }
-      - run: npm ci
-        working-directory: apps/web
-      - run: npm run lint && npm run typecheck && npm run test -- --run
-        working-directory: apps/web
-      - run: npm run build
-        working-directory: apps/web
-        env:
-          VITE_API_URL: https://merma-api.onrender.com
-```
+`render.yaml` deja `autoDeploy: false`: si Render desplegara por su cuenta, la API podría arrancar antes de que la migración cree el esquema. Netlify sigue construyendo desde su integración con Git; opcionalmente se activa **Locked deploys** para que espere el check de GitHub.
 
 ### 8.3 Reglas
 
 - `main` protegida: PR + CI verde + 1 revisión.
-- Render y Netlify despliegan solo desde `main`.
+- El deploy de la API lo dispara solo el pipeline, después de migrar.
 - Nunca commitear `.env`; el `.gitignore` incluye `.env`, `*.dump`, `data/reports/*.json`.
-- Secretos en GitHub solo si un test los necesita (hoy no).
+- Los tests de paridad (`PARITY_DATABASE_URL`) se omiten en CI porque necesitan el Excel real; se ejecutan en local contra la base cargada.
 
 ---
 
@@ -292,7 +257,7 @@ jobs:
 
 | Tarea | Frecuencia | Cómo |
 |---|---|---|
-| Cargar nuevos registros | Semanal/diaria | `npm run etl -- --file <archivo> --mode append` (o formulario en fase 2) |
+| Cargar nuevos registros | Semanal/diaria | Pantalla **Cargas** de la web (o `npm run etl -- --file <archivo> --mode append` en local) |
 | Revisar alertas de calidad | Semanal | Panel `/` → alertas |
 | Actualizar precios del maestro | Mensual | Script `src/etl/update-master.ts` (fase 2) |
 | Migración de esquema | Por release | `npm run db:migrate` desde local/CI contra Neon |

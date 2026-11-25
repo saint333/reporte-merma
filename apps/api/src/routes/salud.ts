@@ -7,7 +7,10 @@ export function registrarSalud(
   app: FastifyInstance,
   pool: Pool,
   version: string,
+  opciones: { requiereTokenCarga?: boolean } = {},
 ): void {
+  const { requiereTokenCarga = false } = opciones;
+
   app.get(
     "/api/v1/salud",
     {
@@ -42,6 +45,7 @@ export function registrarSalud(
         estado: "ok",
         db: "ok",
         version,
+        carga_requiere_token: requiereTokenCarga,
         ultima_carga: rows[0] ? isoLima(rows[0].creada_en) : null,
       };
     } catch (error) {

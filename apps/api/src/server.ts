@@ -9,6 +9,8 @@ const app = await buildApp({
   corsOrigins: config.corsOrigins,
   cacheTtlSeconds: config.cacheTtlSeconds,
   rateLimitMax: config.rateLimitMax,
+  adminToken: config.adminToken,
+  uploadMaxBytes: config.uploadMaxBytes,
 });
 
 const cerrar = async (senal: string) => {

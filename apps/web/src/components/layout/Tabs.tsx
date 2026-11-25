@@ -6,6 +6,7 @@ const TABS = [
   { to: "/", label: "Dashboard", end: true },
   { to: "/registros", label: "Registros" },
   { to: "/analisis", label: "Análisis" },
+  { to: "/cargas", label: "Cargas" },
 ];
 
 export function Tabs() {

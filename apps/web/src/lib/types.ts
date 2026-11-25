@@ -176,5 +176,51 @@ export type Salud = {
   estado: string;
   db: string;
   version: string;
+  carga_requiere_token: boolean;
   ultima_carga: string | null;
+};
+
+export type ReporteCarga = {
+  archivo: string;
+  hash: string;
+  modo: "append" | "replace";
+  leidas: number;
+  insertadas: number;
+  omitidas_por_existir: number;
+  duplicadas: number;
+  errores: number;
+  observaciones: number;
+  filas_observadas: number;
+  desde: string | null;
+  hasta: string | null;
+  costo_total: string;
+  por_estado: { ok: number; observada: number; error: number };
+  motivos_alias: { motivo: string; filas: number[]; costo: string }[];
+  motivos_no_catalogados: { motivo: string; filas: number[]; costo: string }[];
+  posibles_duplicados: {
+    fecha: string;
+    codigo: number;
+    cantidad: string;
+    filas: number[];
+    costo_extra: string;
+  }[];
+  detalle_errores: { fila: number; codigo: string; mensaje: string }[];
+  detalle_observaciones: { fila: number; codigo: string; mensaje: string }[];
+  duracion_ms: number;
+  ya_cargado?: boolean;
+};
+
+export type CargaHistorial = {
+  id: number;
+  archivo: string;
+  filas_leidas: number;
+  filas_insertadas: number;
+  filas_duplicadas: number;
+  filas_observadas: number;
+  desde: string | null;
+  hasta: string | null;
+  estado: string;
+  costo_total: string | null;
+  modo: string | null;
+  creada_en: string;
 };

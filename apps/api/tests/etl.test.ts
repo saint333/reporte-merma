@@ -165,7 +165,7 @@ describe("archivo inválido", () => {
     await wb.xlsx.writeFile(ruta);
 
     await expect(
-      ejecutar(ruta, "dry-run", {
+      ejecutar({ ruta }, "dry-run", {
         pool: {} as Pool,
         reportDir: dir,
       }),

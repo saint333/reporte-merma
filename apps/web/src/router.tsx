@@ -6,6 +6,7 @@ import { Shell } from "./components/layout/Shell";
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const RegistrosPage = lazy(() => import("./pages/RegistrosPage"));
 const AnalisisPage = lazy(() => import("./pages/AnalisisPage"));
+const CargasPage = lazy(() => import("./pages/CargasPage"));
 
 export const router = createBrowserRouter([
   {
@@ -15,6 +16,7 @@ export const router = createBrowserRouter([
       { index: true, element: <DashboardPage /> },
       { path: "registros", element: <RegistrosPage /> },
       { path: "analisis", element: <AnalisisPage /> },
+      { path: "cargas", element: <CargasPage /> },
       {
         path: "*",
         element: (

@@ -14,6 +14,15 @@ const esquema = z.object({
   APP_ENV: z.enum(["development", "test", "production"]).default("development"),
   CACHE_TTL_SECONDS: z.coerce.number().int().min(1).default(60),
   RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(600),
+  ADMIN_TOKEN: z.preprocess(
+    (valor) =>
+      typeof valor === "string" && valor.trim() === "" ? undefined : valor,
+    z
+      .string()
+      .min(16, "ADMIN_TOKEN debe tener al menos 16 caracteres")
+      .optional(),
+  ),
+  UPLOAD_MAX_MB: z.coerce.number().int().min(1).max(50).default(20),
 });
 
 export type Config = {
@@ -23,6 +32,8 @@ export type Config = {
   appEnv: "development" | "test" | "production";
   cacheTtlSeconds: number;
   rateLimitMax: number;
+  adminToken: string | null;
+  uploadMaxBytes: number;
 };
 
 export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -45,5 +56,7 @@ export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
     appEnv: resultado.data.APP_ENV,
     cacheTtlSeconds: resultado.data.CACHE_TTL_SECONDS,
     rateLimitMax: resultado.data.RATE_LIMIT_MAX,
+    adminToken: resultado.data.ADMIN_TOKEN ?? null,
+    uploadMaxBytes: resultado.data.UPLOAD_MAX_MB * 1024 * 1024,
   };
 }

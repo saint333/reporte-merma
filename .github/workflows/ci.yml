@@ -1,0 +1,132 @@
+name: CI/CD
+
+# Pruebas en cada push y PR. En main, además: migraciones en Neon y deploy de la API.
+# Netlify reconstruye la web desde su propia integración con Git.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Cambia este valor si el servicio de Render usa otro subdominio.
+  RENDER_URL: https://merma-api.onrender.com
+  NODE_VERSION: "22"
+
+jobs:
+  pruebas:
+    name: Pruebas y build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: merma
+          POSTGRES_PASSWORD: merma
+          POSTGRES_DB: merma_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            apps/api/package-lock.json
+            apps/web/package-lock.json
+
+      - name: Dependencias de la API
+        working-directory: apps/api
+        run: npm ci
+
+      - name: Esquema en la base de pruebas
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgresql://merma:merma@localhost:5432/merma_test
+        run: npm run db:migrate
+
+      - name: Typecheck y pruebas de la API
+        working-directory: apps/api
+        env:
+          TEST_DATABASE_URL: postgresql://merma:merma@localhost:5432/merma_test
+        run: |
+          npm run typecheck
+          npm test
+
+      - name: Dependencias de la web
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Typecheck, pruebas y build de la web
+        working-directory: apps/web
+        env:
+          VITE_API_URL: ${{ env.RENDER_URL }}
+        run: |
+          npm run typecheck
+          npm test
+          npm run build
+
+  desplegar-api:
+    name: Migrar Neon y desplegar la API
+    needs: pruebas
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: deploy-api
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Dependencias de la API
+        working-directory: apps/api
+        run: npm ci
+
+      # Debe ser la cadena directa de Neon (sin -pooler): postgres-migrations usa
+      # advisory locks y el pooler en modo transacción no los garantiza.
+      - name: Migraciones en Neon
+        working-directory: apps/api
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: npm run db:migrate
+
+      - name: Disparar el deploy en Render
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "Falta el secret RENDER_DEPLOY_HOOK_URL" >&2
+            exit 1
+          fi
+          curl -fsS -X POST "$HOOK"
+
+      - name: Esperar el health check
+        run: |
+          for intento in $(seq 1 40); do
+            if curl -fsS "$RENDER_URL/api/v1/salud"; then
+              echo "API saludable"
+              exit 0
+            fi
+            echo "Intento $intento: la API aún no responde, esperando 10 s…"
+            sleep 10
+          done
+          echo "La API no respondió saludable en 400 s" >&2
+          exit 1

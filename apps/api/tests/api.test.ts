@@ -83,6 +83,7 @@ suite("API contra Postgres de prueba", () => {
       estado: "ok",
       db: "ok",
       version: "0.1.0",
+      carga_requiere_token: false,
     });
     expect(res.json().ultima_carga).toMatch(
       /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}-05:00$/,
@@ -643,5 +644,102 @@ suite("API contra Postgres de prueba", () => {
         eventos: 0,
       },
     ]);
+  });
+
+  it("GET /cargas lista el historial de cargas", async () => {
+    const res = await app.inject({ method: "GET", url: "/api/v1/cargas" });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data).toHaveLength(1);
+    expect(res.json().data[0]).toMatchObject({
+      archivo: "api-test.xlsx",
+      filas_leidas: 4,
+      filas_insertadas: 4,
+      estado: "completada",
+    });
+    expect(res.json().data[0].creada_en).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}-05:00$/,
+    );
+  });
+
+  it("POST /cargas no pide clave cuando no hay ADMIN_TOKEN", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/cargas",
+    });
+
+    // Sin token configurado la petición pasa de largo la autorización y solo
+    // falta el archivo.
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.codigo).toBe("ARCHIVO_REQUERIDO");
+  });
+
+  it("POST /cargas valida token, tipo de contenido y modo", async () => {
+    const token = "token-de-prueba-123456";
+    const appCarga = await buildApp({
+      pool,
+      corsOrigins: ["http://localhost:5173"],
+      logger: false,
+      adminToken: token,
+    });
+
+    const salud = await appCarga.inject({
+      method: "GET",
+      url: "/api/v1/salud",
+    });
+    expect(salud.json().carga_requiere_token).toBe(true);
+
+    const sinToken = await appCarga.inject({
+      method: "POST",
+      url: "/api/v1/cargas",
+    });
+    expect(sinToken.statusCode).toBe(401);
+    expect(sinToken.json().error.codigo).toBe("NO_AUTORIZADO");
+
+    const tokenIncorrecto = await appCarga.inject({
+      method: "POST",
+      url: "/api/v1/cargas",
+      headers: { "x-admin-token": "token-equivocado-123" },
+    });
+    expect(tokenIncorrecto.statusCode).toBe(401);
+
+    const sinMultipart = await appCarga.inject({
+      method: "POST",
+      url: "/api/v1/cargas",
+      headers: { "x-admin-token": token, "content-type": "application/json" },
+      payload: { archivo: "nada" },
+    });
+    expect(sinMultipart.statusCode).toBe(400);
+    expect(sinMultipart.json().error.codigo).toBe("ARCHIVO_REQUERIDO");
+
+    const replaceSinConfirmar = await appCarga.inject({
+      method: "POST",
+      url: "/api/v1/cargas?modo=replace",
+      headers: {
+        "x-admin-token": token,
+        "content-type": "multipart/form-data; boundary=----merma",
+      },
+    });
+    expect(replaceSinConfirmar.statusCode).toBe(422);
+    expect(replaceSinConfirmar.json().error.codigo).toBe(
+      "CONFIRMACION_REQUERIDA",
+    );
+
+    const preflight = await appCarga.inject({
+      method: "OPTIONS",
+      url: "/api/v1/cargas",
+      headers: {
+        origin: "http://localhost:5173",
+        "access-control-request-method": "POST",
+        "access-control-request-headers": "x-admin-token,content-type",
+      },
+    });
+    expect(preflight.statusCode).toBeLessThan(300);
+    expect(preflight.headers["access-control-allow-methods"]).toContain("POST");
+    expect(
+      String(preflight.headers["access-control-allow-headers"]).toLowerCase(),
+    ).toContain("x-admin-token");
+
+    await appCarga.close();
   });
 });
