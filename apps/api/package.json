@@ -9,6 +9,7 @@
   "scripts": {
     "db:migrate": "tsx scripts/migrate.ts",
     "db:check": "tsx scripts/check-schema.ts",
+    "db:quality": "tsx scripts/check-calidad.ts",
     "etl": "tsx src/etl/cli.ts",
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.build.json",

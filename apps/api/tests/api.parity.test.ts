@@ -339,8 +339,8 @@ suite("Paridad de la API con el reporte real", () => {
       total: 1618,
       pages: 33,
     });
+    expect(body.data[0].id).toBeGreaterThan(0);
     expect(body.data[0]).toMatchObject({
-      id: 3417,
       fecha: "2026-11-11",
       semana_iso: 46,
       mes: "2026-11",

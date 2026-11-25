@@ -108,6 +108,12 @@ jobs:
           DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
         run: npm run db:migrate
 
+      - name: Calidad de datos en Neon
+        working-directory: apps/api
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: npm run db:quality
+
       - name: Disparar el deploy en Render
         env:
           HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}

@@ -167,7 +167,7 @@ Los errores de validación devuelven `422 ARCHIVO_INVALIDO` con el mensaje del E
 | Job | Cuándo | Qué hace |
 |---|---|---|
 | `pruebas` | push y PR | Postgres 16 de servicio, migraciones, typecheck y tests de la API; typecheck, tests y build de la web |
-| `desplegar-api` | push a `main` | `db:migrate` contra Neon, `POST` al Deploy Hook de Render y espera de `/api/v1/salud` |
+| `desplegar-api` | push a `main` | `db:migrate` y `db:quality` contra Neon, `POST` al Deploy Hook de Render y espera de `/api/v1/salud` |
 
 Secretos en GitHub → **Settings → Secrets and variables → Actions**:
 

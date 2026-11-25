@@ -260,7 +260,16 @@ select count(*), round(sum(costo_total), 4) from merma.fact_merma;
 -- 1795 | 20383.7500
 ```
 
-Estas consultas se ejecutan en CI y en el checklist de cada carga.
+Estas consultas están en `apps/api/scripts/check_calidad.sql` y se ejecutan con `npm run db:quality` (en `apps/api`). El workflow las corre en Neon antes del Deploy Hook: si alguna cuenta violaciones, el job falla y la API no se despliega. También conviene lanzarlas después de cada carga manual.
+
+### Resultado de la verificación · 25/11/2026
+
+| Comprobación | Local (`merma`) | Neon (producción) |
+|---|---|---|
+| `tests/api.parity.test.ts` (11 pruebas) | 11 passed | 11 passed |
+| `npm run db:quality` | 5 controles en 0, `hechos=1795`, `costo_total=20383.7525` | 5 controles en 0, `hechos=1795`, `costo_total=20383.7525` |
+
+La suite de paridad se ejecuta a demanda con `PARITY_DATABASE_URL` (no en cada push, porque una carga nueva cambia los totales de control y haría fallar el despliegue por datos, no por código).
 
 ---
 
