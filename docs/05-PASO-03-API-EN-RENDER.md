@@ -549,11 +549,11 @@ it("reproduce los KPIs de la campaña", async () => {
 
 ## 8. Entregables
 
-- [ ] API con 10 endpoints documentados en `/docs` (Swagger UI sobre OpenAPI 3.1).
-- [ ] `openapi.json` exportado y tipos generados para el frontend (`openapi-typescript`).
-- [ ] `Dockerfile` + `render.yaml` funcionando.
-- [ ] Suite de pruebas verde (mínimo 30 asserts).
-- [ ] Colección de ejemplos `docs/api/ejemplos.http`.
+- [x] API con 12 endpoints documentados en `/docs` (Swagger UI sobre OpenAPI 3.1), incluido `POST /cargas`.
+- [x] `openapi.json` exportado y tipos generados para el frontend (`npm run api:types`).
+- [x] `Dockerfile` + `render.yaml` funcionando.
+- [x] Suite de pruebas verde (37 pruebas + 11 de paridad).
+- [x] Colección de ejemplos `docs/api/ejemplos.http`.
 
 ---
 

@@ -20,6 +20,7 @@ Plan de migración del libro `REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK` a una apli
 | [07 · Paso 5 · Despliegue](docs/07-PASO-05-DESPLIEGUE-Y-CI-CD.md) | Neon, Render, Netlify, CI/CD, rollback |
 | [08 · Paso 6 · Calidad](docs/08-PASO-06-CALIDAD-Y-RECONCILIACION.md) | Paridad numérica y criterios de aceptación |
 | [09 · Paso 7 · Roadmap](docs/09-PASO-07-ROADMAP-RIESGOS-Y-DECISIONES.md) | Fases, riesgos, decisiones abiertas |
+| [09A · Acta de decisiones](docs/09A-ACTA-DECISIONES.md) | D1–D9 con estado actual, recomendación y firma |
 | [Operación · Despliegue](docs/operacion/despliegue.md) | Render, Netlify, variables y verificación |
 | [Diccionario de datos](docs/modelo/diccionario-datos.md) | Tablas, vistas, índices y reglas del esquema `merma` |
 | [Contrato OpenAPI](docs/api/openapi.json) · [ejemplos HTTP](docs/api/ejemplos.http) | Esquema exportado y peticiones de ejemplo |
@@ -40,7 +41,7 @@ Plan de migración del libro `REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK` a una apli
 - **Carga desde la web:** `POST /api/v1/cargas` recibe el `.xlsx` (multipart) y ejecuta el mismo ETL; la pestaña **Cargas** muestra el resumen y el historial. No pide clave salvo que definas `ADMIN_TOKEN`. `GET /api/v1/cargas` lista las cargas registradas.
 - **Paso 5 desplegado:** API en `https://merma-api.onrender.com` y web en `https://reporte-merma.netlify.app`. El workflow `CI/CD` corre pruebas, migra Neon y dispara el Deploy Hook de Render en cada push a `main`; Netlify reconstruye la web por su integración con Git. CORS y cifras verificados contra las URLs públicas (ver [Operación · Despliegue](docs/operacion/despliegue.md#verificación-en-producción--25112026)).
 - **Paso 6 verificado:** la suite de paridad (`PARITY_DATABASE_URL`) pasa 11/11 en local y en Neon, y `npm run db:quality` deja los 5 controles en cero con 1,795 hechos y `$20,383.75`. El control de calidad corre en el workflow antes del Deploy Hook.
-- **Paso 7:** roadmap, riesgos y decisiones abiertas (D1–D4) en `docs/09`.
+- **Paso 7:** roadmap y riesgos en `docs/09`; las decisiones D1–D9 esperan firma en el [acta](docs/09A-ACTA-DECISIONES.md), que deja registrado qué hace hoy el sistema y qué cambia cada alternativa.
 - **Contrato publicado:** `npm run api:types` en `apps/api` regenera `docs/api/openapi.json` y `apps/web/src/lib/api-schema.d.ts`; CI falla si el snapshot queda desactualizado.
 - El Excel original está en la raíz y no se modifica; el ETL lo acepta por ruta (CLI) o por multipart (web) y no se versiona.
 

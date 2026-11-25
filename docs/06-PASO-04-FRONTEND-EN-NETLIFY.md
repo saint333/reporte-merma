@@ -354,7 +354,7 @@ VITE_APP_TITLE=Control de Mermas · Lambayeque
 - [ ] Export CSV funcionando.
 - [ ] `netlify.toml` y `.env.example`.
 - [ ] Storybook o página `/dev/ui` con los componentes base (opcional, 2 h).
-- [ ] Pruebas unitarias de `formatters.ts` (moneda, porcentaje, semana, fecha).
+- [x] Pruebas unitarias de `formatters.ts` (moneda, porcentaje, semana, fecha).
 
 ---
 

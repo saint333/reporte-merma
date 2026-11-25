@@ -321,7 +321,7 @@ npm run db:check            # 6 tablas · 2 vistas · 13 motivos · 3 parámetro
 
 - [x] `apps/api/db/migrations/*.sql` con las 6 tablas, vistas, índices y seeds.
 - [x] `apps/api/scripts/migrate.ts` con la conexión y el orden de ejecución.
-- [ ] `docs/modelo/diccionario-datos.md` generado (o este documento como fuente).
+- [x] `docs/modelo/diccionario-datos.md` generado desde las migraciones.
 - [x] `apps/api/scripts/check_schema.sql`: 6 tablas, 2 vistas, 13 motivos y 3 parámetros (los 108 materiales se validan en el Paso 2).
 - [x] Base local levantada con Docker Compose (`postgres:16-alpine`) y migración aplicada.
 

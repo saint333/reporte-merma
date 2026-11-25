@@ -113,6 +113,9 @@ Escala: probabilidad (P) e impacto (I) de 1 a 5.
 
 ## 5. Decisiones abiertas (requieren firma)
 
+Acta para firma, con el estado actual del sistema y el cambio que implica cada
+alternativa: [09A · Acta de decisiones](09A-ACTA-DECISIONES.md).
+
 ### D1 · ¿Qué ventana se muestra por defecto?
 
 - **A)** Corte de 28 semanas (08/05–11/11): $17,999.60. Coincide con el Excel actual.
