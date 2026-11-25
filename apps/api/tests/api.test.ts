@@ -78,6 +78,7 @@ suite("API contra Postgres de prueba", () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers["x-request-id"]).toBe("prueba-123");
     expect(res.headers["x-robots-tag"]).toBe("noindex");
+    expect(res.headers["x-content-type-options"]).toBe("nosniff");
     expect(res.json()).toMatchObject({
       estado: "ok",
       db: "ok",
@@ -129,6 +130,7 @@ suite("API contra Postgres de prueba", () => {
     });
 
     expect(res.statusCode).toBe(200);
+    expect(res.headers["cache-control"]).toBe("public, max-age=60");
     const body = res.json();
 
     expect(body.data).toEqual({
@@ -298,5 +300,348 @@ suite("API contra Postgres de prueba", () => {
 
     await appCaida.close();
     await poolCaido.end();
+  });
+
+  it("GET /series/mensual agrupa por mes y calcula participación", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/series/mensual?desde=2026-09-01&hasta=2026-09-30",
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data).toEqual([
+      {
+        mes: "2026-09",
+        eventos: 4,
+        costo: "200.0000",
+        participacion: "1.0000",
+      },
+    ]);
+    expect(res.json().meta.total).toEqual({ eventos: 4, costo: "200.0000" });
+  });
+
+  it("GET /series/semanal genera semanas vacías, WoW y resumen", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/series/semanal?desde=2026-09-01&hasta=2026-09-30",
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+
+    expect(body.data).toHaveLength(5);
+    expect(body.data[0]).toMatchObject({
+      semana_iso: 36,
+      inicio: "2026-08-31",
+      eventos: 1,
+      costo: "100.0000",
+      wow_costo: null,
+      wow_pct: null,
+      es_atipica: false,
+    });
+    expect(body.data[1].wow_pct).toBe(-0.5);
+    expect(body.data[4]).toMatchObject({
+      semana_iso: 40,
+      inicio: "2026-09-28",
+      eventos: 0,
+      costo: "0.0000",
+      wow_pct: -1,
+      es_atipica: false,
+    });
+    expect(body.resumen).toEqual({
+      semanas: 5,
+      promedio: "40.0000",
+      promedio_ajustado: "40.0000",
+      umbral: "3000.00",
+    });
+
+    const sinWow = await app.inject({
+      method: "GET",
+      url: "/api/v1/series/semanal?desde=2026-09-01&hasta=2026-09-30&incluir_wow=false",
+    });
+    expect(sinWow.json().data[0]).not.toHaveProperty("wow_pct");
+  });
+
+  it("GET /cortes/:dimension agrupa y ordena por costo", async () => {
+    const motivos = await app.inject({
+      method: "GET",
+      url: "/api/v1/cortes/motivos?desde=2026-09-01&hasta=2026-09-30",
+    });
+    expect(motivos.statusCode).toBe(200);
+    expect(motivos.json().data).toHaveLength(2);
+    expect(motivos.json().data[0]).toMatchObject({
+      clave: "ROTURA DE EMBALAJES",
+      gestion: "Controlable",
+      eventos: 3,
+      costo: "150.0000",
+      participacion: "0.7500",
+      orden: 1,
+    });
+    expect(motivos.json().total).toEqual({
+      eventos: 4,
+      costo: "200.0000",
+    });
+
+    const familias = await app.inject({
+      method: "GET",
+      url: "/api/v1/cortes/familias?desde=2026-09-01&hasta=2026-09-30",
+    });
+    const bolsas = familias
+      .json()
+      .data.find((fila: { clave: string }) => fila.clave === "BOLSAS");
+    const clamshell = familias
+      .json()
+      .data.find((fila: { clave: string }) => fila.clave === "CLAMSHELL");
+    expect(bolsas).toMatchObject({ costo: "150.0000", pallets_equiv: "0.150000" });
+    expect(clamshell).toMatchObject({
+      costo: "50.0000",
+      pallets_equiv: "0.100000",
+    });
+
+    const gestion = await app.inject({
+      method: "GET",
+      url: "/api/v1/cortes/gestion?desde=2026-09-01&hasta=2026-09-30",
+    });
+    expect(gestion.json().data[0]).toMatchObject({
+      clave: "Controlable",
+      costo: "150.0000",
+      participacion: "0.7500",
+    });
+
+    const invalida = await app.inject({
+      method: "GET",
+      url: "/api/v1/cortes/no-existe?desde=2026-09-01&hasta=2026-09-30",
+    });
+    expect(invalida.statusCode).toBe(422);
+    expect(invalida.json().error.codigo).toBe("FILTRO_INVALIDO");
+  });
+
+  it("GET /pareto calcula ABC y su resumen", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/pareto?desde=2026-09-01&hasta=2026-09-30",
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+
+    expect(body.data).toHaveLength(2);
+    expect(body.data[0]).toMatchObject({
+      rank: 1,
+      codigo: 90000001,
+      eventos: 2,
+      cantidad: "150.0000",
+      costo: "150.0000",
+      participacion: "0.750000",
+      acumulado: "0.750000",
+      clase_abc: "A (Crítico)",
+      prioridad: "CRÍTICO (A)",
+    });
+    expect(body.data[1]).toMatchObject({
+      rank: 2,
+      clase_abc: "C (Bajo)",
+      prioridad: "BAJO IMPACTO",
+    });
+    expect(body.resumen).toEqual({
+      skus: 2,
+      clase_a: 1,
+      clase_b: 0,
+      clase_c: 1,
+      costo_top: "200.0000",
+      participacion_top: "1.000000",
+    });
+
+    const invalido = await app.inject({
+      method: "GET",
+      url: "/api/v1/pareto?desde=2026-09-01&hasta=2026-09-30&limite=0",
+    });
+    expect(invalido.statusCode).toBe(422);
+  });
+
+  it("GET /proyeccion calcula los tres escenarios", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/proyeccion?desde=2026-09-01&hasta=2026-09-30",
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+
+    expect(body.data.parametros).toEqual({
+      acumulado: "200.0000",
+      semanas_observadas: 4,
+      promedio_global: "50.0000",
+      promedio_ajustado: "50.0000",
+      semanas_excluidas: [],
+      semanas_restantes: 6,
+      meta_reduccion: 0.25,
+      proporcion_controlable: "0.7500",
+    });
+    expect(body.data.escenarios[0]).toEqual({
+      id: "tendencial",
+      nombre: "A. Tendencial histórico",
+      tasa: "50.0000",
+      proyeccion_6s: "300.0000",
+      cierre: "500.0000",
+      ahorro: "0.0000",
+    });
+    expect(body.data.escenarios[2]).toEqual({
+      id: "meta",
+      nombre: "C. Meta optimizada",
+      tasa: "40.6250",
+      proyeccion_6s: "243.7500",
+      cierre: "443.7500",
+      ahorro: "56.2500",
+    });
+
+    const insuficiente = await app.inject({
+      method: "GET",
+      url: "/api/v1/proyeccion?desde=2026-09-01&hasta=2026-09-01",
+    });
+    expect(insuficiente.statusCode).toBe(422);
+    expect(insuficiente.json().error.codigo).toBe("SERIE_INSUFICIENTE");
+  });
+
+  it("GET /registros pagina, filtra y exporta CSV", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&per_page=2",
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["cache-control"]).toBeUndefined();
+    const body = res.json();
+    expect(body.page).toEqual({ page: 1, per_page: 2, total: 4, pages: 2 });
+    expect(body.data).toHaveLength(2);
+    expect(body.data[0]).toMatchObject({
+      fecha: "2026-09-22",
+      codigo_material: 90000002,
+      costo_total: "30.0000",
+    });
+
+    const porMotivo = await app.inject({
+      method: "GET",
+      url: `/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&motivo=${encodeURIComponent(
+        "ROTURA DE EMBALAJES",
+      )}`,
+    });
+    expect(porMotivo.json().page.total).toBe(3);
+
+    const porCodigo = await app.inject({
+      method: "GET",
+      url: "/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&codigo=90000002",
+    });
+    expect(porCodigo.json().page.total).toBe(2);
+
+    const csv = await app.inject({
+      method: "GET",
+      url: "/api/v1/registros.csv?desde=2026-09-01&hasta=2026-09-30&per_page=2",
+    });
+    expect(csv.statusCode).toBe(200);
+    expect(csv.headers["content-type"]).toContain("text/csv");
+    expect(csv.body.charCodeAt(0)).toBe(0xfeff);
+    expect(csv.body.split("\r\n").filter(Boolean)).toHaveLength(5);
+
+    const ascendente = await app.inject({
+      method: "GET",
+      url: "/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&sort=cantidad&order=asc&per_page=1",
+    });
+    expect(ascendente.json().data[0].cantidad).toBe("20.0000");
+
+    const paginaInvalida = await app.inject({
+      method: "GET",
+      url: "/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&page=0",
+    });
+    expect(paginaInvalida.statusCode).toBe(422);
+
+    const ordenInvalido = await app.inject({
+      method: "GET",
+      url: "/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&sort=descripcion",
+    });
+    expect(ordenInvalido.statusCode).toBe(422);
+  });
+
+  it("publica OpenAPI 3.1 y Swagger UI", async () => {
+    const spec = await app.inject({ method: "GET", url: "/openapi.json" });
+    expect(spec.statusCode).toBe(200);
+
+    const body = spec.json();
+    expect(body.openapi).toBe("3.1.0");
+    expect(body.paths["/api/v1/kpis"]).toBeTruthy();
+    expect(
+      body.paths["/api/v1/kpis"].get.parameters.some(
+        (parametro: { name: string; in: string }) =>
+          parametro.name === "desde" && parametro.in === "query",
+      ),
+    ).toBe(true);
+
+    const docs = await app.inject({ method: "GET", url: "/docs" });
+    expect([200, 302]).toContain(docs.statusCode);
+  });
+
+  it("aplica rate limit global por IP", async () => {
+    const appLimitada = await buildApp({
+      pool,
+      corsOrigins: [],
+      logger: false,
+      rateLimitMax: 1,
+    });
+
+    const primera = await appLimitada.inject({
+      method: "GET",
+      url: "/api/v1/meta",
+    });
+    const segunda = await appLimitada.inject({
+      method: "GET",
+      url: "/api/v1/meta",
+    });
+
+    expect(primera.statusCode).toBe(200);
+    expect(segunda.statusCode).toBe(429);
+    await appLimitada.close();
+  });
+
+  it("GET /alertas deriva pico, concentración y variación", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/alertas?desde=2026-09-01&hasta=2026-09-30",
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+
+    expect(body.data.map((alerta: { id: string }) => alerta.id)).toEqual([
+      "pico-semanal",
+      "concentracion-sku",
+      "variacion-wow",
+    ]);
+    expect(body.data[0]).toMatchObject({
+      valor: "100.0000",
+      eventos: 1,
+      severidad: "alta",
+      titulo: "La semana 36 concentra 50.0% de la merma",
+    });
+    expect(body.data[1].titulo).toContain("75.0%");
+    expect(body.data[2]).toMatchObject({
+      valor: "0.5000",
+      severidad: "media",
+      titulo: "Aumento de 50.0% en la última semana",
+    });
+
+    const vacio = await app.inject({
+      method: "GET",
+      url: "/api/v1/alertas?desde=2026-09-01&hasta=2026-09-30&familia=RIBBON",
+    });
+    expect(vacio.json().data).toEqual([
+      {
+        id: "sin-datos",
+        severidad: "media",
+        icono: "info",
+        titulo: "Sin datos para el rango seleccionado",
+        detalle: "Ajusta el rango de fechas o los filtros para ver alertas.",
+        valor: "0.0000",
+        eventos: 0,
+      },
+    ]);
   });
 });

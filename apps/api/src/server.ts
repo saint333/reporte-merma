@@ -4,7 +4,12 @@ import { crearPool } from "./db.js";
 
 const config = cargarConfig();
 const pool = crearPool(config.databaseUrl);
-const app = await buildApp({ pool, corsOrigins: config.corsOrigins });
+const app = await buildApp({
+  pool,
+  corsOrigins: config.corsOrigins,
+  cacheTtlSeconds: config.cacheTtlSeconds,
+  rateLimitMax: config.rateLimitMax,
+});
 
 const cerrar = async (senal: string) => {
   app.log.info(`Cerrando por ${senal}`);

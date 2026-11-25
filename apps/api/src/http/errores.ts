@@ -1,12 +1,26 @@
 import type { FastifyInstance } from "fastify";
 
-export class FiltroInvalido extends Error {
+export class ErrorApi extends Error {
   constructor(
+    public readonly codigo: string,
     mensaje: string,
     public readonly detalle: unknown = null,
+    public readonly status = 422,
   ) {
     super(mensaje);
-    this.name = "FiltroInvalido";
+    this.name = "ErrorApi";
+  }
+}
+
+export class FiltroInvalido extends ErrorApi {
+  constructor(mensaje: string, detalle: unknown = null) {
+    super("FILTRO_INVALIDO", mensaje, detalle);
+  }
+}
+
+export class SerieInsuficiente extends ErrorApi {
+  constructor(mensaje: string, detalle: unknown = null) {
+    super("SERIE_INSUFICIENTE", mensaje, detalle);
   }
 }
 
@@ -30,12 +44,24 @@ export function esErrorDeBase(error: unknown): boolean {
 
 export function registrarErrores(app: FastifyInstance): void {
   app.setErrorHandler((error, request, reply) => {
-    if (error instanceof FiltroInvalido) {
-      return reply.code(422).send({
+    if (error instanceof ErrorApi) {
+      return reply.code(error.status).send({
         error: {
-          codigo: "FILTRO_INVALIDO",
+          codigo: error.codigo,
           mensaje: error.message,
           detalle: error.detalle,
+        },
+      });
+    }
+
+    const errorHttp = error as { statusCode?: number; message?: string };
+    const status = errorHttp.statusCode;
+    if (status && status >= 400 && status < 500) {
+      return reply.code(status).send({
+        error: {
+          codigo: status === 429 ? "RATE_LIMIT" : "SOLICITUD_INVALIDA",
+          mensaje: errorHttp.message ?? "Solicitud inválida",
+          detalle: null,
         },
       });
     }

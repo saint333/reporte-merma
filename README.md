@@ -32,7 +32,7 @@ Plan de migración del libro `REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK` a una apli
 
 - **Paso 1 implementado:** esquema Postgres, migraciones SQL y verificación en `apps/api`.
 - **Paso 2 implementado:** ETL en TypeScript con `dry-run`, `append`, `replace` y reporte de calidad.
-- **Paso 3 en curso:** API Fastify con `/api/v1/salud`, `/api/v1/meta` y `/api/v1/kpis`, filtros validados y pruebas de paridad. El resto de endpoints sigue en `docs/05`.
+- **Paso 3 completo:** API Fastify con `/api/v1/salud`, `/meta`, `/kpis`, `/series/mensual`, `/series/semanal`, `/cortes/:dimension`, `/pareto`, `/proyeccion`, `/registros`, `/registros.csv` y `/alertas`; filtros Zod, caché TTL, Swagger UI en `/docs`, helmet, rate limit y pruebas de paridad.
 - Pasos 4 a 7: planificados en `docs/`.
 - El Excel original está en la raíz y no se modifica; el ETL lo lee por ruta y no se versiona.
 
@@ -67,13 +67,20 @@ npm run dev              # http://localhost:8000/api/v1/salud
 npm run build && npm start
 ```
 
+Documentación interactiva: [`http://localhost:8000/docs`](http://localhost:8000/docs) · especificación: `http://localhost:8000/openapi.json`. La caché y el rate limit se configuran con `CACHE_TTL_SECONDS` (60 s) y `RATE_LIMIT_MAX` (600 por minuto).
+
 Endpoints disponibles:
 
 ```bash
 curl -s localhost:8000/api/v1/salud
 curl -s localhost:8000/api/v1/meta
 curl -s "localhost:8000/api/v1/kpis?desde=2026-05-08&hasta=2026-11-11"
-curl -s "localhost:8000/api/v1/kpis?desde=2026-05-08&hasta=2026-11-11&gestion=Controlable"
+curl -s "localhost:8000/api/v1/series/semanal?desde=2026-05-08&hasta=2026-11-11"
+curl -s "localhost:8000/api/v1/cortes/motivos?desde=2026-05-08&hasta=2026-11-11"
+curl -s "localhost:8000/api/v1/pareto?desde=2026-05-08&hasta=2026-11-11"
+curl -s "localhost:8000/api/v1/proyeccion?desde=2026-05-08&hasta=2026-11-11"
+curl -s "localhost:8000/api/v1/registros?desde=2026-05-08&hasta=2026-11-11&per_page=10"
+curl -s "localhost:8000/api/v1/alertas?desde=2026-05-08&hasta=2026-11-11"
 ```
 
 Pruebas de la API:

@@ -17,20 +17,42 @@ Implementado en este corte:
 | `GET /api/v1/salud` | Listo | `src/routes/salud.ts` |
 | `GET /api/v1/meta` | Listo | `src/routes/meta.ts` |
 | `GET /api/v1/kpis` | Listo | `src/routes/kpis.ts`, `src/services/kpis.ts` |
+| `GET /api/v1/series/mensual` | Listo | `src/routes/series.ts`, `src/services/series.ts` |
+| `GET /api/v1/series/semanal` | Listo | `src/routes/series.ts`, `src/services/series.ts` |
+| `GET /api/v1/cortes/:dimension` | Listo | `src/routes/cortes.ts`, `src/services/cortes.ts` |
+| `GET /api/v1/pareto` | Listo | `src/routes/pareto.ts`, `src/services/pareto.ts` |
+| `GET /api/v1/proyeccion` | Listo | `src/routes/proyeccion.ts`, `src/services/proyeccion.ts` |
+| `GET /api/v1/registros` | Listo | `src/routes/registros.ts`, `src/services/registros.ts` |
+| `GET /api/v1/registros.csv` | Listo | `src/routes/registros.ts` |
+| `GET /api/v1/alertas` | Listo | `src/routes/alertas.ts`, `src/services/alertas.ts` |
 
-También están listos el parseo Zod de filtros (`src/http/filtros.ts`), el sobre `data/meta`, el formato único de error, CORS por lista blanca, `buildApp()` y el arranque con cierre ordenado (`src/server.ts`).
+También están listos el parseo Zod de filtros (`src/http/filtros.ts`), el sobre `data/meta`, el formato único de error (incluido `SERIE_INSUFICIENTE` y `RATE_LIMIT`), CORS por lista blanca, `buildApp()` y el arranque con cierre ordenado (`src/server.ts`).
 
-Pendiente para completar el Paso 3: `/series/*`, `/cortes/*`, `/pareto`, `/proyeccion`, `/registros`, `/alertas`, caché TTL, Swagger, helmet y rate limit.
+Infraestructura transversal:
+
+- **Caché:** `CacheApi` con `lru-cache` (256 entradas) y TTL de `CACHE_TTL_SECONDS` (60 s por defecto) en `meta`, `kpis`, series, cortes, Pareto, proyección y alertas. Los agregados responden `Cache-Control: public, max-age=<TTL>`.
+- **Swagger:** OpenAPI 3.1 en `/openapi.json` y Swagger UI en `/docs`. Los esquemas de query están en `src/http/openapi.ts`; `attachValidation` deja que Zod mantenga los 422.
+- **Seguridad:** `@fastify/helmet` (CSP desactivada para permitir Swagger UI) y `@fastify/rate-limit` global, `RATE_LIMIT_MAX` por minuto y respuesta 429 `RATE_LIMIT`.
+- **Pendiente fuera de este paso:** `Dockerfile`, `render.yaml` y despliegue corresponden al Paso 5; la generación de tipos TypeScript para el frontend se hará con el cliente del Paso 4.
+
+Notas de implementación:
+
+- La proyección usa solo el rango de fechas e ignora `programa`, `familia`, `mes` y `gestion`, igual que el Excel. La respuesta lo declara en `meta.alcance`.
+- `/alertas` toma `motivo-huerfano` del reporte de la última carga completada (`carga.detalle.motivos_alias`), por lo que es una alerta de calidad de ingesta y no desaparece al filtrar por fecha.
+- `/registros.csv` no pagina, aplica los mismos filtros y corta en 50,000 filas.
 
 Pruebas:
 
-- `tests/api.test.ts`: dataset fijo en una base de prueba (9 casos: salud, meta, KPIs, filtros, 422, CORS, 404 y 503).
-- `tests/api.parity.test.ts`: cifras de control contra el dataset real; se activa con `PARITY_DATABASE_URL`.
+- `tests/api.test.ts`: dataset fijo en una base de prueba (18 casos: endpoints, filtros, paginación, CSV, 422, CORS, 404, 503, OpenAPI y rate limit).
+- `tests/api.parity.test.ts`: cifras de control contra el dataset real (11 casos); se activa con `PARITY_DATABASE_URL`.
+- `tests/cache.test.ts`: reutilización por clave y separación de rutas/filtros (2 casos).
 
 ```bash
 TEST_DATABASE_URL=postgresql://merma:merma@localhost:5432/merma_test npm test
 PARITY_DATABASE_URL=postgresql://merma:merma@localhost:5432/merma npm test
 ```
+
+Resultado actual: **45 pruebas verdes** (18 de API con dataset fijo, 11 de paridad, 14 de ETL y 2 de caché).
 
 ---
 

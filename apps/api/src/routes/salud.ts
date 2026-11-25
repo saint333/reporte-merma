@@ -8,7 +8,15 @@ export function registrarSalud(
   pool: Pool,
   version: string,
 ): void {
-  app.get("/api/v1/salud", async (request, reply) => {
+  app.get(
+    "/api/v1/salud",
+    {
+      schema: {
+        tags: ["Sistema"],
+        summary: "Estado del servicio y de la base de datos",
+      },
+    },
+    async (request, reply) => {
     let timer: NodeJS.Timeout | undefined;
 
     try {
@@ -46,7 +54,8 @@ export function registrarSalud(
         },
       });
     } finally {
-      if (timer) clearTimeout(timer);
-    }
-  });
+        if (timer) clearTimeout(timer);
+      }
+    },
+  );
 }

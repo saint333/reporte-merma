@@ -12,6 +12,8 @@ const esquema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(8000),
   CORS_ORIGINS: z.string().default("http://localhost:5173"),
   APP_ENV: z.enum(["development", "test", "production"]).default("development"),
+  CACHE_TTL_SECONDS: z.coerce.number().int().min(1).default(60),
+  RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(600),
 });
 
 export type Config = {
@@ -19,6 +21,8 @@ export type Config = {
   port: number;
   corsOrigins: string[];
   appEnv: "development" | "test" | "production";
+  cacheTtlSeconds: number;
+  rateLimitMax: number;
 };
 
 export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -39,5 +43,7 @@ export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
       .map((origen) => origen.trim())
       .filter(Boolean),
     appEnv: resultado.data.APP_ENV,
+    cacheTtlSeconds: resultado.data.CACHE_TTL_SECONDS,
+    rateLimitMax: resultado.data.RATE_LIMIT_MAX,
   };
 }
