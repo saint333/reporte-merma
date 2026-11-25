@@ -20,6 +20,7 @@ Plan de migración del libro `REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK` a una apli
 | [07 · Paso 5 · Despliegue](docs/07-PASO-05-DESPLIEGUE-Y-CI-CD.md) | Neon, Render, Netlify, CI/CD, rollback |
 | [08 · Paso 6 · Calidad](docs/08-PASO-06-CALIDAD-Y-RECONCILIACION.md) | Paridad numérica y criterios de aceptación |
 | [09 · Paso 7 · Roadmap](docs/09-PASO-07-ROADMAP-RIESGOS-Y-DECISIONES.md) | Fases, riesgos, decisiones abiertas |
+| [Operación · Despliegue](docs/operacion/despliegue.md) | Render, Netlify, variables y verificación |
 
 ## Cifras que la app debe reproducir
 
@@ -34,7 +35,8 @@ Plan de migración del libro `REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK` a una apli
 - **Paso 2 implementado:** ETL en TypeScript con `dry-run`, `append`, `replace` y reporte de calidad.
 - **Paso 3 completo:** API Fastify con `/api/v1/salud`, `/meta`, `/kpis`, `/series/mensual`, `/series/semanal`, `/cortes/:dimension`, `/pareto`, `/proyeccion`, `/registros`, `/registros.csv` y `/alertas`; filtros Zod, caché TTL, Swagger UI en `/docs`, helmet, rate limit y pruebas de paridad.
 - **Paso 4 implementado:** SPA React con dashboard, registros y análisis; filtros en URL, cinco gráficas, Pareto, matriz de gestión, alertas, export CSV y estados de carga/error. Build y pruebas del frontend en `apps/web`.
-- Pasos 5 a 7: planificados en `docs/`.
+- **Paso 5 preparado:** Blueprint de Render, imagen Docker de la API y configuración de Netlify listos; falta ejecutar el despliegue real y validar CORS con las URLs públicas.
+- Pasos 6 y 7: planificados en `docs/`.
 - El Excel original está en la raíz y no se modifica; el ETL lo lee por ruta y no se versiona.
 
 ### Levantar el frontend
@@ -57,7 +59,15 @@ npm test
 npm run build
 ```
 
-El sitio se publica en Netlify desde la raíz con `netlify.toml` (base `apps/web`, publish `dist` y fallback SPA). Configura `VITE_API_URL` en Netlify con la URL pública de Render.
+### Despliegue
+
+La configuración está preparada en el repositorio:
+
+- `render.yaml` crea la API en Render con runtime Docker y health check.
+- `apps/api/Dockerfile` construye la imagen de producción.
+- `netlify.toml` define el build de `apps/web`, el fallback SPA y las cabeceras.
+
+Variables mínimas: `DATABASE_URL` y `CORS_ORIGINS` en Render; `VITE_API_URL` en Netlify. El procedimiento completo, incluida la carga de Neon y la verificación de CORS, está en [`docs/operacion/despliegue.md`](docs/operacion/despliegue.md).
 
 ### Levantar el esquema local
 

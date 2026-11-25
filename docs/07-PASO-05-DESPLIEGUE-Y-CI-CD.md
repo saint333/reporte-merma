@@ -6,6 +6,8 @@
 
 **Objetivo:** publicar la base, la API y la web con un procedimiento repetible, secretos fuera del repositorio y rollback probado.
 
+> **Configuración vigente:** el repositorio ya incluye `render.yaml`, `apps/api/Dockerfile` y `netlify.toml`. El runbook operativo con las variables exactas está en [`operacion/despliegue.md`](operacion/despliegue.md).
+
 ---
 
 ## 1. Orden de despliegue
@@ -73,7 +75,7 @@ psql "$DATABASE_URL" -c "\dt merma.*"
 ```bash
 # desde apps/api
 npm run etl -- \
-  --file "../../data/source/REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK.xlsx" \
+  --file "../../REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK (1) (6).xlsx" \
   --mode append
 psql "$DATABASE_URL" -c "select count(*), round(sum(costo_total),2) from merma.fact_merma;"
 # esperado: 1795 | 20383.75
@@ -113,18 +115,18 @@ Swagger: http://localhost:8000/docs
 
 ### 5.1 Opción A — Blueprint (recomendado)
 
-1. Subir `render.yaml` a la raíz del repo (contenido en el Paso 3 §6).
+1. Verificar que `render.yaml` y `apps/api/Dockerfile` están en el repo.
 2. Render Dashboard → **New** → **Blueprint** → seleccionar el repo.
-3. Render detecta `merma-api` y pide `DATABASE_URL` (está como `sync: false`).
+3. Render detecta `merma-api` y pide `DATABASE_URL` y `CORS_ORIGINS` (ambas están como `sync: false`).
 4. Pegar la cadena con `postgresql://…?sslmode=require`.
-5. Completar `CORS_ORIGINS` con la URL de Netlify (se puede ajustar después).
+5. Completar `CORS_ORIGINS` con la URL de Netlify, sin barra final (se puede ajustar después).
 6. **Create**.
 
 ### 5.2 Opción B — Manual
 
 1. **New** → **Web Service** → repo.
 2. Nombre `merma-api`, runtime **Docker**, Dockerfile `apps/api/Dockerfile`, contexto `apps/api`.
-3. Plan **Free**, región la misma de Neon.
+3. Plan **Free**, región la misma de Neon (`virginia`).
 4. Health check: `/api/v1/salud`.
 5. Variables de entorno (§5.3).
 6. Deploy.
@@ -138,6 +140,7 @@ Swagger: http://localhost:8000/docs
 | `APP_ENV` | `production` | No |
 | `TZ` | `America/Lima` | No |
 | `CACHE_TTL_SECONDS` | `60` | No |
+| `RATE_LIMIT_MAX` | `600` | No |
 
 ### 5.4 Migraciones en el servicio
 
@@ -174,8 +177,8 @@ curl -s "https://merma-api.onrender.com/api/v1/kpis?desde=2026-05-08&hasta=2026-
    - Build: `npm ci && npm run build`
    - Publish: `dist`
 3. Variables:
-   - `VITE_API_URL=https://merma-api.onrender.com`
-   - `VITE_APP_TITLE=Control de Mermas · Lambayeque`
+   - `VITE_API_URL=https://<servicio>.onrender.com` (sin `/api/v1` ni barra final)
+   - `VITE_APP_TITLE` ya está definido en `netlify.toml`; no hace falta duplicarlo.
 4. **Deploy site**.
 
 ### 6.2 Ajustar CORS

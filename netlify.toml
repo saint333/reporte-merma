@@ -1,11 +1,14 @@
+# VITE_API_URL se define en Netlify > Site configuration > Environment variables.
+# Debe ser el origen público de Render, sin /api/v1 y sin barra final.
 [build]
   base    = "apps/web"
   command = "npm ci && npm run build"
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "22"
-  NPM_FLAGS    = "--no-audit --no-fund"
+  NODE_VERSION    = "22"
+  NPM_FLAGS       = "--no-audit --no-fund"
+  VITE_APP_TITLE  = "Control de Mermas · Lambayeque"
 
 [[redirects]]
   from   = "/*"

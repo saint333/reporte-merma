@@ -1,0 +1,26 @@
+# Blueprint de Render para la API.
+# DATABASE_URL debe apuntar a Postgres gestionado (Neon recomendado) con sslmode=require.
+# CORS_ORIGINS se completa con la URL pública de Netlify, sin barra final.
+services:
+  - type: web
+    name: merma-api
+    runtime: docker
+    plan: free
+    region: virginia
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: ./apps/api
+    healthCheckPath: /api/v1/salud
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: APP_ENV
+        value: production
+      - key: TZ
+        value: America/Lima
+      - key: CACHE_TTL_SECONDS
+        value: "60"
+      - key: RATE_LIMIT_MAX
+        value: "600"
