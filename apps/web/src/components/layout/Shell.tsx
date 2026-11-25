@@ -1,8 +1,9 @@
-import { Suspense } from "react";
-import { Outlet } from "react-router-dom";
+import { Suspense, useEffect, useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 
 import { Skeleton } from "../ui/Skeleton";
 import { FilterBar } from "./FilterBar";
+import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
 function PageSkeleton() {
@@ -23,8 +24,31 @@ function PageSkeleton() {
 }
 
 export function Shell() {
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    setMenuAbierto(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!menuAbierto) return;
+
+    function alPresionar(evento: KeyboardEvent) {
+      if (evento.key === "Escape") setMenuAbierto(false);
+    }
+
+    document.addEventListener("keydown", alPresionar);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", alPresionar);
+      document.body.style.overflow = "";
+    };
+  }, [menuAbierto]);
+
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col lg:pl-[264px]">
       <a
         href="#contenido"
         className="focus:bg-surface focus:text-ink focus:ring-cyan sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:px-3 focus:py-2 focus:text-sm focus:ring-2 focus:outline-none"
@@ -32,22 +56,27 @@ export function Shell() {
         Ir al contenido
       </a>
 
-      <Topbar />
+      <Sidebar abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} />
 
-      <div className="mx-auto max-w-[1600px] px-4 pt-4 lg:px-6">
+      <Topbar
+        onAbrirMenu={() => setMenuAbierto(true)}
+        menuAbierto={menuAbierto}
+      />
+
+      <div className="mx-auto w-full max-w-[1600px] px-4 pt-4 lg:px-6">
         <FilterBar />
       </div>
 
       <main
         id="contenido"
-        className="mx-auto max-w-[1600px] px-4 py-4 lg:px-6"
+        className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-4 lg:px-6"
       >
         <Suspense fallback={<PageSkeleton />}>
           <Outlet />
         </Suspense>
       </main>
 
-      <footer className="text-muted border-border/70 mx-auto max-w-[1600px] border-t px-4 py-4 text-[10px] lg:px-6">
+      <footer className="text-muted border-border/70 mx-auto w-full max-w-[1600px] border-t px-4 py-4 text-[10px] lg:px-6">
         Datos de solo lectura · Mermas de materiales · API y base PostgreSQL
       </footer>
     </div>
