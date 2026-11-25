@@ -8,7 +8,8 @@ export type IconoNombre =
   | "menu"
   | "cerrar"
   | "descargar"
-  | "buscar";
+  | "buscar"
+  | "agregar";
 
 const TRAZOS: Record<IconoNombre, ReactNode> = {
   panel: (
@@ -51,6 +52,7 @@ const TRAZOS: Record<IconoNombre, ReactNode> = {
       <path d="M16 16l4.5 4.5" />
     </>
   ),
+  agregar: <path d="M12 5v14M5 12h14" />,
 };
 
 export function Icono({

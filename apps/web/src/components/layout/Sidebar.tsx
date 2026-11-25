@@ -23,7 +23,8 @@ const SECCIONES: { etiqueta: string; items: Item[] }[] = [
   {
     etiqueta: "Datos",
     items: [
-      { to: "/registros", label: "Registros", icono: "registros" },
+      { to: "/registros", label: "Registros", icono: "registros", end: true },
+      { to: "/registros/nuevo", label: "Nuevo registro", icono: "agregar" },
       { to: "/cargas", label: "Cargas", icono: "cargas" },
     ],
   },

@@ -5,6 +5,7 @@ import { paramsFiltros } from "./filters";
 import type {
   Alerta,
   CargaHistorial,
+  Catalogos,
   Envelope,
   FilaCorte,
   FilaPareto,
@@ -77,6 +78,15 @@ export const cargasQuery = queryOptions({
       { limite: 20 },
       signal,
     ).then((respuesta) => respuesta.data),
+  ...COMUN,
+});
+
+export const catalogosQuery = queryOptions({
+  queryKey: ["catalogos"],
+  queryFn: ({ signal }) =>
+    getJson<Envelope<Catalogos>>("/api/v1/catalogos", {}, signal).then(
+      (respuesta) => respuesta.data,
+    ),
   ...COMUN,
 });
 

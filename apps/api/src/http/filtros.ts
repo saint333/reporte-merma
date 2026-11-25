@@ -1,3 +1,4 @@
+import { Decimal } from "decimal.js";
 import { z } from "zod";
 
 import { FiltroInvalido } from "./errores.js";
@@ -91,11 +92,31 @@ export const esquemaProyeccion = validarRango(
   }),
 );
 
+const cantidadManual = z
+  .union([z.string(), z.number()])
+  .transform((valor) => String(valor).trim())
+  .refine((valor) => {
+    try {
+      const cantidad = new Decimal(valor);
+      return cantidad.isFinite() && cantidad.gt(0);
+    } catch {
+      return false;
+    }
+  }, "La cantidad debe ser numérica y mayor que cero");
+
+export const esquemaRegistroManual = z.strictObject({
+  fecha,
+  codigo_material: z.coerce.number().int().positive(),
+  cantidad: cantidadManual,
+  motivo: z.string().trim().min(1).max(120),
+});
+
 export type Filtros = z.infer<typeof baseFiltros>;
 export type RegistrosQuery = z.infer<typeof esquemaRegistros>;
 export type ParetoQuery = z.infer<typeof esquemaPareto>;
 export type SerieSemanalQuery = z.infer<typeof esquemaSerieSemanal>;
 export type ProyeccionQuery = z.infer<typeof esquemaProyeccion>;
+export type RegistroManualBody = z.infer<typeof esquemaRegistroManual>;
 
 function parseConEsquema<T>(esquema: z.ZodType<T>, query: unknown): T {
   const resultado = esquema.safeParse(query);
@@ -132,6 +153,10 @@ export function parseSerieSemanal(query: unknown): SerieSemanalQuery {
 
 export function parseProyeccion(query: unknown): ProyeccionQuery {
   return parseConEsquema(esquemaProyeccion, query);
+}
+
+export function parseRegistroManual(body: unknown): RegistroManualBody {
+  return parseConEsquema(esquemaRegistroManual, body);
 }
 
 export function where(filtros: Filtros): { sql: string; params: unknown[] } {

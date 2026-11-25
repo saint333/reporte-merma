@@ -674,6 +674,175 @@ suite("API contra Postgres de prueba", () => {
     expect(res.json().error.codigo).toBe("ARCHIVO_REQUERIDO");
   });
 
+  it("GET /catalogos devuelve materiales y motivos para el formulario", async () => {
+    const res = await app.inject({ method: "GET", url: "/api/v1/catalogos" });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["cache-control"]).toBe("public, max-age=60");
+
+    const body = res.json();
+    expect(body.data.materiales).toHaveLength(2);
+    expect(body.data.materiales[0]).toMatchObject({
+      descripcion: "BOLSA TEST",
+      um: "UNI",
+      familia: "BOLSAS",
+      programa: "GENÉRICO",
+      valor_unitario: "1.0000000000",
+    });
+    expect(body.data.motivos).toHaveLength(13);
+    expect(body.data.motivos[0]).toHaveProperty("gestionabilidad");
+  });
+
+  it("POST /registros crea un evento manual y su carga de auditoría", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/registros",
+      payload: {
+        fecha: "2026-09-29",
+        codigo_material: 90000001,
+        cantidad: "12.5",
+        motivo: "ROTURA DE EMBALAJES",
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+
+    expect(typeof body.data.carga_id).toBe("number");
+    expect(body.data.registro).toMatchObject({
+      fecha: "2026-09-29",
+      semana_iso: 40,
+      mes: "2026-09",
+      codigo_material: 90000001,
+      descripcion: "BOLSA TEST",
+      cantidad: "12.5000",
+      um: "UNI",
+      motivo: "ROTURA DE EMBALAJES",
+      gestion: "Controlable",
+      costo_total: "12.5000",
+      es_duplicado: false,
+    });
+
+    const cargas = await app.inject({ method: "GET", url: "/api/v1/cargas" });
+    expect(cargas.json().data[0]).toMatchObject({
+      archivo: "Registro manual",
+      filas_leidas: 1,
+      filas_insertadas: 1,
+      desde: "2026-09-29",
+      hasta: "2026-09-29",
+      modo: "manual",
+      estado: "completada",
+    });
+
+    const registros = await app.inject({
+      method: "GET",
+      url: "/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&per_page=100",
+    });
+    expect(registros.json().page.total).toBe(5);
+  });
+
+  it("POST /registros rechaza duplicados, catálogos inexistentes y cantidades inválidas", async () => {
+    const duplicado = await app.inject({
+      method: "POST",
+      url: "/api/v1/registros",
+      payload: {
+        fecha: "2026-09-29",
+        codigo_material: 90000001,
+        cantidad: "12.5",
+        motivo: "ROTURA DE EMBALAJES",
+      },
+    });
+    expect(duplicado.statusCode).toBe(409);
+    expect(duplicado.json().error.codigo).toBe("REGISTRO_DUPLICADO");
+
+    const material = await app.inject({
+      method: "POST",
+      url: "/api/v1/registros",
+      payload: {
+        fecha: "2026-09-30",
+        codigo_material: 99999999,
+        cantidad: "1",
+        motivo: "ROTURA DE EMBALAJES",
+      },
+    });
+    expect(material.statusCode).toBe(422);
+    expect(material.json().error.codigo).toBe("MATERIAL_NO_REGISTRADO");
+
+    const motivo = await app.inject({
+      method: "POST",
+      url: "/api/v1/registros",
+      payload: {
+        fecha: "2026-09-30",
+        codigo_material: 90000001,
+        cantidad: "1",
+        motivo: "MOTIVO INVENTADO",
+      },
+    });
+    expect(motivo.statusCode).toBe(422);
+    expect(motivo.json().error.codigo).toBe("MOTIVO_NO_REGISTRADO");
+
+    const cantidad = await app.inject({
+      method: "POST",
+      url: "/api/v1/registros",
+      payload: {
+        fecha: "2026-09-30",
+        codigo_material: 90000001,
+        cantidad: "0",
+        motivo: "ROTURA DE EMBALAJES",
+      },
+    });
+    expect(cantidad.statusCode).toBe(422);
+    expect(cantidad.json().error.codigo).toBe("FILTRO_INVALIDO");
+
+    const fechaInvalida = await app.inject({
+      method: "POST",
+      url: "/api/v1/registros",
+      payload: {
+        fecha: "2026-02-31",
+        codigo_material: 90000001,
+        cantidad: "1",
+        motivo: "ROTURA DE EMBALAJES",
+      },
+    });
+    expect(fechaInvalida.statusCode).toBe(422);
+  });
+
+  it("POST /registros exige la clave cuando hay ADMIN_TOKEN", async () => {
+    const token = "token-de-prueba-123456";
+    const appManual = await buildApp({
+      pool,
+      corsOrigins: ["http://localhost:5173"],
+      logger: false,
+      adminToken: token,
+    });
+
+    const payload = {
+      fecha: "2026-09-30",
+      codigo_material: 90000002,
+      cantidad: "2",
+      motivo: "CONTRAMUESTRA",
+    };
+
+    const sinToken = await appManual.inject({
+      method: "POST",
+      url: "/api/v1/registros",
+      payload,
+    });
+    expect(sinToken.statusCode).toBe(401);
+    expect(sinToken.json().error.codigo).toBe("NO_AUTORIZADO");
+
+    const conToken = await appManual.inject({
+      method: "POST",
+      url: "/api/v1/registros",
+      headers: { "x-admin-token": token },
+      payload,
+    });
+    expect(conToken.statusCode).toBe(201);
+    expect(conToken.json().data.registro.costo_total).toBe("2.0000");
+
+    await appManual.close();
+  });
+
   it("POST /cargas valida token, tipo de contenido y modo", async () => {
     const token = "token-de-prueba-123456";
     const appCarga = await buildApp({

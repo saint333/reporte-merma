@@ -105,7 +105,27 @@ Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 < ./reporte.xlsx
 ------MermaBoundary--
 
-### 19. Errores esperados
+### 19. Catálogos para el formulario manual · materiales y motivos activos
+GET {{host}}/api/v1/catalogos
+
+### esperado: 200 · 108 materiales con valor_unitario y 13 motivos
+
+### 20. Registrar un evento manual · calcula semana, valor unitario y costo
+POST {{host}}/api/v1/registros
+Content-Type: application/json
+
+{
+  "fecha": "2026-11-25",
+  "codigo_material": 10012345,
+  "cantidad": "12.5",
+  "motivo": "ROTURA DE EMBALAJES"
+}
+
+### esperado: 201 · data.registro con costo_total y carga_id
+### 409 REGISTRO_DUPLICADO si ya existe fecha + material + cantidad + motivo
+### si defines ADMIN_TOKEN en la API, agrega: x-admin-token: <token>
+
+### 21. Errores esperados
 GET {{host}}/api/v1/kpis?desde=2026-11-11&hasta=2026-05-08
 
 ### 400 FILTRO_INVALIDO · "desde no puede superar a hasta"
@@ -120,7 +140,7 @@ POST {{host}}/api/v1/cargas?modo=append
 
 ### 400 ARCHIVO_REQUERIDO · sin archivo y sin clave
 
-### 20. Contrato generado
+### 22. Contrato generado
 GET {{host}}/openapi.json
 
 ### Swagger UI: {{host}}/docs

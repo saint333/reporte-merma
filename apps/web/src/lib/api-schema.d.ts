@@ -72,6 +72,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalogos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Materiales y motivos para registrar un evento manual */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/kpis": {
         parameters: {
             query?: never;
@@ -416,7 +450,41 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /**
+         * Registra manualmente un evento de merma
+         * @description Valida el material y el motivo contra el catálogo, calcula la semana ISO, el valor unitario y el costo total con las mismas reglas del ETL, y deja una carga de auditoría con el evento. Solo pide la cabecera x-admin-token si la API define ADMIN_TOKEN.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @example 2026-11-25 */
+                        fecha: string;
+                        /** @example 10012345 */
+                        codigo_material: number;
+                        /** @example 12.5 */
+                        cantidad: string | number;
+                        /** @example ROTURA DE EMBALAJES */
+                        motivo: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;

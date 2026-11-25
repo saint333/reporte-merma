@@ -3,7 +3,7 @@
   "info": {
     "title": "API del Reporte de Merma",
     "version": "0.1.0",
-    "description": "Endpoints de solo lectura para KPIs, series, cortes, Pareto, proyección, registros y alertas."
+    "description": "Endpoints de consulta para KPIs, series, cortes, Pareto, proyección, registros y alertas, más la carga del Excel y el registro manual de mermas."
   },
   "components": {
     "schemas": {}
@@ -25,6 +25,19 @@
     "/api/v1/meta": {
       "get": {
         "summary": "Rango, filtros, vistas y última carga",
+        "tags": [
+          "Catálogo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/catalogos": {
+      "get": {
+        "summary": "Materiales y motivos para registrar un evento manual",
         "tags": [
           "Catálogo"
         ],
@@ -674,6 +687,72 @@
             "description": "Código exacto de material."
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "post": {
+        "summary": "Registra manualmente un evento de merma",
+        "tags": [
+          "Registros"
+        ],
+        "description": "Valida el material y el motivo contra el catálogo, calcula la semana ISO, el valor unitario y el costo total con las mismas reglas del ETL, y deja una carga de auditoría con el evento. Solo pide la cabecera x-admin-token si la API define ADMIN_TOKEN.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "fecha",
+                  "codigo_material",
+                  "cantidad",
+                  "motivo"
+                ],
+                "properties": {
+                  "fecha": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "examples": [
+                      "2026-11-25"
+                    ]
+                  },
+                  "codigo_material": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "examples": [
+                      10012345
+                    ]
+                  },
+                  "cantidad": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "examples": [
+                      "12.5"
+                    ]
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "examples": [
+                      "ROTURA DE EMBALAJES"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Default Response"

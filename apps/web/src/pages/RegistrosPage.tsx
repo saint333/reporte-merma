@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { ColdStartNotice } from "../components/feedback/ColdStartNotice";
 import { EmptyState } from "../components/feedback/EmptyState";
@@ -144,6 +144,13 @@ export default function RegistrosPage() {
             {registros.data && (
               <Badge tono="cyan">{integer(total)} registros</Badge>
             )}
+            <Link
+              to="/registros/nuevo"
+              className="border-border text-ink hover:border-cyan/50 focus-visible:ring-cyan focus-visible:ring-offset-page inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            >
+              <Icono nombre="agregar" className="size-3.5" />
+              Agregar registro
+            </Link>
             <button
               type="button"
               onClick={() => void exportar()}

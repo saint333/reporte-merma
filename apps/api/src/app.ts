@@ -13,6 +13,7 @@ import { CacheApi } from "./http/cache.js";
 import { registrarErrores } from "./http/errores.js";
 import { registrarAlertas } from "./routes/alertas.js";
 import { registrarCargas } from "./routes/cargas.js";
+import { registrarCatalogos } from "./routes/catalogos.js";
 import { registrarCortes } from "./routes/cortes.js";
 import { registrarKpis } from "./routes/kpis.js";
 import { registrarMeta } from "./routes/meta.js";
@@ -24,6 +25,7 @@ import { registrarSeries } from "./routes/series.js";
 
 const RUTAS_CACHEABLES = new Set([
   "/api/v1/meta",
+  "/api/v1/catalogos",
   "/api/v1/kpis",
   "/api/v1/series/mensual",
   "/api/v1/series/semanal",
@@ -87,7 +89,7 @@ export async function buildApp(opciones: {
         title: "API del Reporte de Merma",
         version: "0.1.0",
         description:
-          "Endpoints de solo lectura para KPIs, series, cortes, Pareto, proyección, registros y alertas.",
+          "Endpoints de consulta para KPIs, series, cortes, Pareto, proyección, registros y alertas, más la carga del Excel y el registro manual de mermas.",
       },
       servers: [{ url: "/", description: "Origen actual" }],
       tags: [
@@ -130,12 +132,13 @@ export async function buildApp(opciones: {
     requiereTokenCarga: Boolean(adminToken),
   });
   registrarMeta(app, pool);
+  registrarCatalogos(app, pool);
   registrarKpis(app, pool);
   registrarSeries(app, pool);
   registrarCortes(app, pool);
   registrarPareto(app, pool);
   registrarProyeccion(app, pool);
-  registrarRegistros(app, pool);
+  registrarRegistros(app, pool, { adminToken });
   registrarAlertas(app, pool);
   registrarCargas(app, pool, { adminToken, maxBytes: uploadMaxBytes });
 

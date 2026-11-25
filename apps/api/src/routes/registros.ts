@@ -1,9 +1,15 @@
 import type { FastifyInstance } from "fastify";
 import type { Pool } from "pg";
 
-import { filtrosMeta, parseRegistros } from "../http/filtros.js";
+import { exigirAutorizacion } from "../http/autorizacion.js";
+import {
+  filtrosMeta,
+  parseRegistroManual,
+  parseRegistros,
+} from "../http/filtros.js";
 import { queryRegistros } from "../http/openapi.js";
 import { envelope } from "../http/respuesta.js";
+import { crearRegistroManual } from "../services/manuales.js";
 import {
   consultarRegistros,
   consultarRegistrosCsv,
@@ -45,7 +51,11 @@ function aCsv(filas: FilaRegistro[]): string {
   return `\uFEFF${lineas.join("\r\n")}\r\n`;
 }
 
-export function registrarRegistros(app: FastifyInstance, pool: Pool): void {
+export function registrarRegistros(
+  app: FastifyInstance,
+  pool: Pool,
+  opciones: { adminToken: string | null },
+): void {
   app.get(
     "/api/v1/registros",
     {
@@ -69,6 +79,69 @@ export function registrarRegistros(app: FastifyInstance, pool: Pool): void {
           pages,
         },
       };
+    },
+  );
+
+  app.post(
+    "/api/v1/registros",
+    {
+      attachValidation: true,
+      config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+      schema: {
+        tags: ["Registros"],
+        summary: "Registra manualmente un evento de merma",
+        description:
+          "Valida el material y el motivo contra el catálogo, calcula la semana ISO, el valor unitario y el costo total con las mismas reglas del ETL, y deja una carga de auditoría con el evento. " +
+          "Solo pide la cabecera x-admin-token si la API define ADMIN_TOKEN.",
+        body: {
+          type: "object",
+          additionalProperties: false,
+          required: ["fecha", "codigo_material", "cantidad", "motivo"],
+          properties: {
+            fecha: {
+              type: "string",
+              pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+              examples: ["2026-11-25"],
+            },
+            codigo_material: {
+              type: "integer",
+              minimum: 1,
+              examples: [10012345],
+            },
+            cantidad: {
+              anyOf: [{ type: "string" }, { type: "number" }],
+              examples: ["12.5"],
+            },
+            motivo: {
+              type: "string",
+              minLength: 1,
+              maxLength: 120,
+              examples: ["ROTURA DE EMBALAJES"],
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      exigirAutorizacion(request.headers["x-admin-token"], opciones.adminToken);
+
+      const entrada = parseRegistroManual(request.body);
+      const data = await crearRegistroManual(pool, {
+        fecha: entrada.fecha,
+        codigoMaterial: entrada.codigo_material,
+        cantidad: entrada.cantidad,
+        motivo: entrada.motivo,
+      });
+
+      // KPIs, series, cortes y Pareto cacheados quedan obsoletos.
+      app.cache.limpiar();
+
+      request.log.info(
+        { carga_id: data.carga_id, registro_id: data.registro.id },
+        "registro manual creado",
+      );
+
+      return reply.code(201).send(envelope(data));
     },
   );
 

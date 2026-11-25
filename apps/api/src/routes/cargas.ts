@@ -1,10 +1,9 @@
-import { timingSafeEqual } from "node:crypto";
-
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { MultipartFile } from "@fastify/multipart";
 import type { Pool } from "pg";
 
 import { ejecutar, type Modo, type Reporte } from "../etl/load-xlsx.js";
+import { exigirAutorizacion } from "../http/autorizacion.js";
 import { ErrorApi, esErrorDeBase } from "../http/errores.js";
 import { isoLima } from "../http/fechas.js";
 import { envelope } from "../http/respuesta.js";
@@ -35,28 +34,6 @@ export type CargaHistorial = {
 type FilaCarga = Omit<CargaHistorial, "creada_en"> & { creada_en: Date };
 
 type ArchivoRecibido = { bytes: Buffer; nombre: string };
-
-function tokenValido(recibido: unknown, esperado: string): boolean {
-  if (typeof recibido !== "string") return false;
-
-  const a = Buffer.from(recibido, "utf8");
-  const b = Buffer.from(esperado, "utf8");
-  return a.length === b.length && timingSafeEqual(a, b);
-}
-
-function exigirAutorizacion(token: unknown, opciones: OpcionesCargas): void {
-  // Sin ADMIN_TOKEN la carga queda abierta: es el modo por defecto.
-  if (!opciones.adminToken) return;
-
-  if (!tokenValido(token, opciones.adminToken)) {
-    throw new ErrorApi(
-      "NO_AUTORIZADO",
-      "La clave de administración no es válida.",
-      null,
-      401,
-    );
-  }
-}
 
 function traducirErrorArchivo(error: unknown, maxBytes: number): never {
   if ((error as { code?: string }).code === "FST_REQ_FILE_TOO_LARGE") {
@@ -132,7 +109,7 @@ export function registrarCargas(
       },
     },
     async (request, reply) => {
-      exigirAutorizacion(request.headers["x-admin-token"], opciones);
+      exigirAutorizacion(request.headers["x-admin-token"], opciones.adminToken);
 
       if (!request.isMultipart()) {
         throw new ErrorApi(

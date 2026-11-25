@@ -39,6 +39,7 @@ Plan de migración del libro `REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK` a una apli
 - **Paso 3 completo:** API Fastify con `/api/v1/salud`, `/meta`, `/kpis`, `/series/mensual`, `/series/semanal`, `/cortes/:dimension`, `/pareto`, `/proyeccion`, `/registros`, `/registros.csv` y `/alertas`; filtros Zod, caché TTL, Swagger UI en `/docs`, helmet, rate limit y pruebas de paridad.
 - **Paso 4 implementado:** SPA React con dashboard, registros y análisis; filtros en URL, cinco gráficas, Pareto, matriz de gestión, alertas, export CSV y estados de carga/error. Build y pruebas del frontend en `apps/web`.
 - **Carga desde la web:** `POST /api/v1/cargas` recibe el `.xlsx` (multipart) y ejecuta el mismo ETL; la pestaña **Cargas** muestra el resumen y el historial. No pide clave salvo que definas `ADMIN_TOKEN`. `GET /api/v1/cargas` lista las cargas registradas.
+- **Registro manual:** `POST /api/v1/registros` agrega un evento suelto (JSON) validando material y motivo contra el catálogo, calculando semana ISO y costo con las mismas reglas del ETL y dejando una carga de auditoría “Registro manual”. La pantalla **Nuevo registro** usa `GET /api/v1/catalogos` para los selectores; también respeta `ADMIN_TOKEN`. Un evento repetido responde `409 REGISTRO_DUPLICADO`.
 - **Paso 5 desplegado:** API en `https://merma-api.onrender.com` y web en `https://reporte-merma.netlify.app`. El workflow `CI/CD` corre pruebas, migra Neon y dispara el Deploy Hook de Render en cada push a `main`; Netlify reconstruye la web por su integración con Git. CORS y cifras verificados contra las URLs públicas (ver [Operación · Despliegue](docs/operacion/despliegue.md#verificación-en-producción--25112026)).
 - **Paso 6 verificado:** la suite de paridad (`PARITY_DATABASE_URL`) pasa 11/11 en local y en Neon, y `npm run db:quality` deja los 5 controles en cero con 1,795 hechos y `$20,383.75`. El control de calidad corre en el workflow antes del Deploy Hook.
 - **Paso 7:** roadmap y riesgos en `docs/09`; las decisiones D1–D9 esperan firma en el [acta](docs/09A-ACTA-DECISIONES.md), que deja registrado qué hace hoy el sistema y qué cambia cada alternativa.
@@ -131,6 +132,10 @@ curl -s "localhost:8000/api/v1/proyeccion?desde=2026-05-08&hasta=2026-11-11"
 curl -s "localhost:8000/api/v1/registros?desde=2026-05-08&hasta=2026-11-11&per_page=10"
 curl -s "localhost:8000/api/v1/registros?desde=2026-05-08&hasta=2026-11-11&q=CLAMSHELL"
 curl -s "localhost:8000/api/v1/alertas?desde=2026-05-08&hasta=2026-11-11"
+curl -s localhost:8000/api/v1/catalogos
+curl -s -X POST localhost:8000/api/v1/registros \
+  -H "content-type: application/json" \
+  -d '{"fecha":"2026-11-25","codigo_material":10012345,"cantidad":"12.5","motivo":"ROTURA DE EMBALAJES"}'
 ```
 
 Pruebas de la API:

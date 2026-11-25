@@ -1,4 +1,8 @@
-import type { ReporteCarga } from "./types";
+import type {
+  RegistroManualCreado,
+  RegistroManualEntrada,
+  ReporteCarga,
+} from "./types";
 
 export type Parametros = Record<
   string,
@@ -130,6 +134,45 @@ export async function subirCarga(
   const payload = (await respuesta
     .json()
     .catch(() => null)) as (ErrorApiPayload & { data?: ReporteCarga }) | null;
+
+  if (!respuesta.ok || !payload?.data) {
+    throw new ApiError(respuesta.status, payload);
+  }
+
+  return payload.data;
+}
+
+export async function crearRegistroManual(
+  entrada: RegistroManualEntrada,
+  token = "",
+  signal?: AbortSignal,
+): Promise<RegistroManualCreado> {
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+    Accept: "application/json",
+  };
+  if (token) headers["x-admin-token"] = token;
+
+  let respuesta: Response;
+  try {
+    respuesta = await fetch(`${BASE}/api/v1/registros`, {
+      method: "POST",
+      body: JSON.stringify(entrada),
+      signal,
+      headers,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
+    throw new ApiError(0, null);
+  }
+
+  const payload = (await respuesta
+    .json()
+    .catch(() => null)) as (ErrorApiPayload & {
+    data?: RegistroManualCreado;
+  }) | null;
 
   if (!respuesta.ok || !payload?.data) {
     throw new ApiError(respuesta.status, payload);

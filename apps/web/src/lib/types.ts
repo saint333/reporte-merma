@@ -210,6 +210,40 @@ export type ReporteCarga = {
   ya_cargado?: boolean;
 };
 
+export type CatalogoMaterial = {
+  codigo: number;
+  descripcion: string;
+  um: string;
+  familia: string;
+  programa: string;
+  valor_unitario: string;
+};
+
+export type CatalogoMotivo = {
+  codigo: string;
+  categoria: string;
+  area_responsable: string;
+  gestionabilidad: string;
+  accion_correctiva: string | null;
+};
+
+export type Catalogos = {
+  materiales: CatalogoMaterial[];
+  motivos: CatalogoMotivo[];
+};
+
+export type RegistroManualEntrada = {
+  fecha: string;
+  codigo_material: number;
+  cantidad: string;
+  motivo: string;
+};
+
+export type RegistroManualCreado = {
+  carga_id: number;
+  registro: Registro;
+};
+
 export type CargaHistorial = {
   id: number;
   archivo: string;
