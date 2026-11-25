@@ -117,6 +117,28 @@ Prueba funcional mínima:
 - [ ] Un push a `main` dispara el workflow y el deploy de Render queda **Live**.
 - [ ] En móvil (375 px) no hay scroll horizontal.
 
+### Verificación en producción · 25/11/2026
+
+Comprobación por HTTP contra las URLs reales (sin navegador):
+
+| Comprobación | Resultado |
+|---|---|
+| `GET /api/v1/salud` | `200`, `db: ok`, `carga_requiere_token: false` |
+| Campaña 08/05–11/11 | `17999.6033` · 1,618 eventos · ticket `11.1246` · controlable `0.624` · pallets `14.898022` · 79/108 SKU · pico S40 |
+| Todo el registro 08/05–23/11 | `20383.7525` · 1,795 eventos |
+| Filtro `2026-09` | `9108.9505` · 320 eventos |
+| `GET /meta` | rango 08/05–23/11 (200 días), 1,795 registros / 108 materiales / 13 motivos |
+| `GET /pareto` | 79 SKU, 14 clase A, top `14596.5068` (81.09%); la fila 15 queda en “ALTO IMPACTO” |
+| `GET /alertas` | 7 sin motivo por `$1,118.13`, 4 duplicados, `MALA IMPRESIÓN` (3), S40 al 31.0% |
+| `GET /registros.csv` | `text/csv`, `attachment`, 1,618 filas + cabecera, tildes y coma decimal correctas |
+| CORS `GET /salud` desde `https://reporte-merma.netlify.app` | `access-control-allow-origin` con ese origen, sin `*` |
+| Preflight `OPTIONS /cargas` | `204`, `allow-methods: GET, POST, OPTIONS`, `allow-headers: content-type, x-admin-token, x-request-id` |
+| Cabeceras de Netlify | `X-Robots-Tag: noindex, nofollow`, `X-Frame-Options: DENY`, HSTS con `preload` |
+| `POST /cargas` sin cabecera y sin archivo | `400 ARCHIVO_REQUERIDO`: no exige clave |
+| Workflow `CI/CD` en el push de `main` | `Pruebas y build` y `Migrar Neon y desplegar la API` en success |
+
+Queda como revisión manual en navegador la lista de arriba: móvil a 375 px, export desde la UI y recarga de una URL con filtros.
+
 ## 5. Cargar datos desde la web
 
 La ruta **Cargas** de la SPA envía el `.xlsx` a `POST /api/v1/cargas` y la API ejecuta el mismo ETL que la CLI, sin acceso al sistema de archivos.
