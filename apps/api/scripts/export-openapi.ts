@@ -34,8 +34,9 @@ try {
   await writeFile(destino, `${JSON.stringify(esquema, null, 2)}\n`, "utf8");
 
   const rutas = Object.keys(esquema.paths ?? {}).length;
+  const version = (esquema as { openapi?: string }).openapi ?? "3.1.0";
   console.log(
-    `openapi.json escrito en ${destino} (${rutas} rutas, OpenAPI ${esquema.openapi})`,
+    `openapi.json escrito en ${destino} (${rutas} rutas, OpenAPI ${version})`,
   );
 } finally {
   await app.close();
