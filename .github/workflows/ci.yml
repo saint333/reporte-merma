@@ -65,6 +65,12 @@ jobs:
           npm run typecheck
           npm test
 
+      - name: El contrato OpenAPI está actualizado
+        working-directory: apps/api
+        run: |
+          npm run api:types
+          git diff --exit-code ../../docs/api/openapi.json ../web/src/lib/api-schema.d.ts
+
       - name: Dependencias de la web
         working-directory: apps/web
         run: npm ci

@@ -1,0 +1,1017 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "API del Reporte de Merma",
+    "version": "0.1.0",
+    "description": "Endpoints de solo lectura para KPIs, series, cortes, Pareto, proyección, registros y alertas."
+  },
+  "components": {
+    "schemas": {}
+  },
+  "paths": {
+    "/api/v1/salud": {
+      "get": {
+        "summary": "Estado del servicio y de la base de datos",
+        "tags": [
+          "Sistema"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/meta": {
+      "get": {
+        "summary": "Rango, filtros, vistas y última carga",
+        "tags": [
+          "Catálogo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/kpis": {
+      "get": {
+        "summary": "KPIs del rango filtrado",
+        "tags": [
+          "KPIs"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "desde",
+            "required": true,
+            "description": "Fecha inicial (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "hasta",
+            "required": true,
+            "description": "Fecha final (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "mes",
+            "required": false,
+            "description": "Mes o meses separados por coma (YYYY-MM)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "programa",
+            "required": false,
+            "description": "Programa o programas separados por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "familia",
+            "required": false,
+            "description": "Familia o familias separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "gestion",
+            "required": false,
+            "description": "Gestionabilidad o gestionabilidades separadas por coma."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/series/mensual": {
+      "get": {
+        "summary": "Serie mensual con participación",
+        "tags": [
+          "Series"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "desde",
+            "required": true,
+            "description": "Fecha inicial (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "hasta",
+            "required": true,
+            "description": "Fecha final (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "mes",
+            "required": false,
+            "description": "Mes o meses separados por coma (YYYY-MM)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "programa",
+            "required": false,
+            "description": "Programa o programas separados por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "familia",
+            "required": false,
+            "description": "Familia o familias separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "gestion",
+            "required": false,
+            "description": "Gestionabilidad o gestionabilidades separadas por coma."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/series/semanal": {
+      "get": {
+        "summary": "Serie semanal con WoW y resumen",
+        "tags": [
+          "Series"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "desde",
+            "required": true,
+            "description": "Fecha inicial (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "hasta",
+            "required": true,
+            "description": "Fecha final (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "mes",
+            "required": false,
+            "description": "Mes o meses separados por coma (YYYY-MM)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "programa",
+            "required": false,
+            "description": "Programa o programas separados por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "familia",
+            "required": false,
+            "description": "Familia o familias separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "gestion",
+            "required": false,
+            "description": "Gestionabilidad o gestionabilidades separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "default": "true"
+            },
+            "in": "query",
+            "name": "incluir_wow",
+            "required": false,
+            "description": "Incluye los campos de variación semana a semana."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/cortes/{dimension}": {
+      "get": {
+        "summary": "Ranking por motivo, familia, programa o gestión",
+        "tags": [
+          "Cortes"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "desde",
+            "required": true,
+            "description": "Fecha inicial (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "hasta",
+            "required": true,
+            "description": "Fecha final (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "mes",
+            "required": false,
+            "description": "Mes o meses separados por coma (YYYY-MM)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "programa",
+            "required": false,
+            "description": "Programa o programas separados por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "familia",
+            "required": false,
+            "description": "Familia o familias separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "gestion",
+            "required": false,
+            "description": "Gestionabilidad o gestionabilidades separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "motivos",
+                "familias",
+                "programas",
+                "gestion"
+              ]
+            },
+            "in": "path",
+            "name": "dimension",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/pareto": {
+      "get": {
+        "summary": "Pareto ABC de SKUs con Top configurable",
+        "tags": [
+          "Pareto"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "desde",
+            "required": true,
+            "description": "Fecha inicial (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "hasta",
+            "required": true,
+            "description": "Fecha final (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "mes",
+            "required": false,
+            "description": "Mes o meses separados por coma (YYYY-MM)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "programa",
+            "required": false,
+            "description": "Programa o programas separados por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "familia",
+            "required": false,
+            "description": "Familia o familias separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "gestion",
+            "required": false,
+            "description": "Gestionabilidad o gestionabilidades separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 108,
+              "default": 15
+            },
+            "in": "query",
+            "name": "limite",
+            "required": false,
+            "description": "Cantidad de SKUs del Top."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/proyeccion": {
+      "get": {
+        "summary": "Escenarios de cierre tendencial, base y meta",
+        "tags": [
+          "Proyección"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "desde",
+            "required": true,
+            "description": "Fecha inicial (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "hasta",
+            "required": true,
+            "description": "Fecha final (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "mes",
+            "required": false,
+            "description": "Mes o meses separados por coma (YYYY-MM)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "programa",
+            "required": false,
+            "description": "Programa o programas separados por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "familia",
+            "required": false,
+            "description": "Familia o familias separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "gestion",
+            "required": false,
+            "description": "Gestionabilidad o gestionabilidades separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "in": "query",
+            "name": "meta_reduccion",
+            "required": false,
+            "description": "Sobrescribe la meta de reducción controlable."
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 52
+            },
+            "in": "query",
+            "name": "semanas_restantes",
+            "required": false,
+            "description": "Sobrescribe el horizonte de proyección."
+          },
+          {
+            "schema": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "in": "query",
+            "name": "umbral_atipico",
+            "required": false,
+            "description": "Sobrescribe el umbral de semana atípica."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/registros": {
+      "get": {
+        "summary": "Detalle paginado de eventos de merma",
+        "tags": [
+          "Registros"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "desde",
+            "required": true,
+            "description": "Fecha inicial (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "hasta",
+            "required": true,
+            "description": "Fecha final (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "mes",
+            "required": false,
+            "description": "Mes o meses separados por coma (YYYY-MM)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "programa",
+            "required": false,
+            "description": "Programa o programas separados por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "familia",
+            "required": false,
+            "description": "Familia o familias separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "gestion",
+            "required": false,
+            "description": "Gestionabilidad o gestionabilidades separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "in": "query",
+            "name": "page",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50
+            },
+            "in": "query",
+            "name": "per_page",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "fecha",
+                "costo_total",
+                "cantidad",
+                "semana_iso"
+              ],
+              "default": "fecha"
+            },
+            "in": "query",
+            "name": "sort",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "in": "query",
+            "name": "order",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "description": "Busca en descripción, código o motivo."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "motivo",
+            "required": false,
+            "description": "Código exacto del motivo."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "in": "query",
+            "name": "codigo",
+            "required": false,
+            "description": "Código exacto de material."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/registros.csv": {
+      "get": {
+        "summary": "Exporta los registros filtrados a CSV",
+        "tags": [
+          "Registros"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "desde",
+            "required": true,
+            "description": "Fecha inicial (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "hasta",
+            "required": true,
+            "description": "Fecha final (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "mes",
+            "required": false,
+            "description": "Mes o meses separados por coma (YYYY-MM)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "programa",
+            "required": false,
+            "description": "Programa o programas separados por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "familia",
+            "required": false,
+            "description": "Familia o familias separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "gestion",
+            "required": false,
+            "description": "Gestionabilidad o gestionabilidades separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "in": "query",
+            "name": "page",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50
+            },
+            "in": "query",
+            "name": "per_page",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "fecha",
+                "costo_total",
+                "cantidad",
+                "semana_iso"
+              ],
+              "default": "fecha"
+            },
+            "in": "query",
+            "name": "sort",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "in": "query",
+            "name": "order",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "description": "Busca en descripción, código o motivo."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "motivo",
+            "required": false,
+            "description": "Código exacto del motivo."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "in": "query",
+            "name": "codigo",
+            "required": false,
+            "description": "Código exacto de material."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/alertas": {
+      "get": {
+        "summary": "Alertas de calidad, concentración y variación",
+        "tags": [
+          "Alertas"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "desde",
+            "required": true,
+            "description": "Fecha inicial (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "hasta",
+            "required": true,
+            "description": "Fecha final (YYYY-MM-DD)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "mes",
+            "required": false,
+            "description": "Mes o meses separados por coma (YYYY-MM)."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "programa",
+            "required": false,
+            "description": "Programa o programas separados por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "familia",
+            "required": false,
+            "description": "Familia o familias separadas por coma."
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "gestion",
+            "required": false,
+            "description": "Gestionabilidad o gestionabilidades separadas por coma."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/cargas": {
+      "post": {
+        "summary": "Carga el Excel de mermas desde el navegador",
+        "tags": [
+          "Cargas"
+        ],
+        "description": "Recibe el archivo en multipart/form-data (campo archivo) y ejecuta el mismo ETL que la CLI. Solo pide la cabecera x-admin-token si la API define ADMIN_TOKEN. El modo replace borra los hechos de la carga previa del mismo archivo.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "append",
+                "replace"
+              ],
+              "default": "append"
+            },
+            "in": "query",
+            "name": "modo",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "in": "query",
+            "name": "confirmar",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "get": {
+        "summary": "Historial de cargas registradas",
+        "tags": [
+          "Cargas"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "in": "query",
+            "name": "limite",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Origen actual"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Sistema",
+      "description": "Salud y documentación"
+    },
+    {
+      "name": "Catálogo",
+      "description": "Filtros y metadatos"
+    },
+    {
+      "name": "KPIs",
+      "description": "Indicadores del rango"
+    },
+    {
+      "name": "Series",
+      "description": "Evolución mensual y semanal"
+    },
+    {
+      "name": "Cortes",
+      "description": "Rankings por dimensión"
+    },
+    {
+      "name": "Pareto",
+      "description": "ABC por SKU"
+    },
+    {
+      "name": "Proyección",
+      "description": "Escenarios de cierre"
+    },
+    {
+      "name": "Registros",
+      "description": "Detalle paginado y CSV"
+    },
+    {
+      "name": "Alertas",
+      "description": "Calidad y concentración"
+    },
+    {
+      "name": "Cargas",
+      "description": "Carga del Excel desde la web"
+    }
+  ]
+}

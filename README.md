@@ -21,6 +21,8 @@ Plan de migración del libro `REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK` a una apli
 | [08 · Paso 6 · Calidad](docs/08-PASO-06-CALIDAD-Y-RECONCILIACION.md) | Paridad numérica y criterios de aceptación |
 | [09 · Paso 7 · Roadmap](docs/09-PASO-07-ROADMAP-RIESGOS-Y-DECISIONES.md) | Fases, riesgos, decisiones abiertas |
 | [Operación · Despliegue](docs/operacion/despliegue.md) | Render, Netlify, variables y verificación |
+| [Diccionario de datos](docs/modelo/diccionario-datos.md) | Tablas, vistas, índices y reglas del esquema `merma` |
+| [Contrato OpenAPI](docs/api/openapi.json) · [ejemplos HTTP](docs/api/ejemplos.http) | Esquema exportado y peticiones de ejemplo |
 
 ## Cifras que la app debe reproducir
 
@@ -39,6 +41,7 @@ Plan de migración del libro `REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK` a una apli
 - **Paso 5 desplegado:** API en `https://merma-api.onrender.com` y web en `https://reporte-merma.netlify.app`. El workflow `CI/CD` corre pruebas, migra Neon y dispara el Deploy Hook de Render en cada push a `main`; Netlify reconstruye la web por su integración con Git. CORS y cifras verificados contra las URLs públicas (ver [Operación · Despliegue](docs/operacion/despliegue.md#verificación-en-producción--25112026)).
 - **Paso 6 verificado:** la suite de paridad (`PARITY_DATABASE_URL`) pasa 11/11 en local y en Neon, y `npm run db:quality` deja los 5 controles en cero con 1,795 hechos y `$20,383.75`. El control de calidad corre en el workflow antes del Deploy Hook.
 - **Paso 7:** roadmap, riesgos y decisiones abiertas (D1–D4) en `docs/09`.
+- **Contrato publicado:** `npm run api:types` en `apps/api` regenera `docs/api/openapi.json` y `apps/web/src/lib/api-schema.d.ts`; CI falla si el snapshot queda desactualizado.
 - El Excel original está en la raíz y no se modifica; el ETL lo acepta por ruta (CLI) o por multipart (web) y no se versiona.
 
 ### Levantar el frontend
