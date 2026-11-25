@@ -5,7 +5,10 @@ import { useSearchParams } from "react-router-dom";
 import { ColdStartNotice } from "../components/feedback/ColdStartNotice";
 import { EmptyState } from "../components/feedback/EmptyState";
 import { ErrorState } from "../components/feedback/ErrorState";
+import { PageHeader } from "../components/layout/PageHeader";
+import { Icono } from "../components/layout/Iconos";
 import { RegistrosTable } from "../components/tables/RegistrosTable";
+import { Badge } from "../components/ui/Badge";
 import { Card } from "../components/ui/Card";
 import { Skeleton } from "../components/ui/Skeleton";
 import { descargarCsv } from "../lib/api";
@@ -132,14 +135,27 @@ export default function RegistrosPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-ink text-lg font-semibold tracking-tight">
-          Registros
-        </h1>
-        <p className="text-muted mt-0.5 text-xs">
-          Explora los eventos de merma, ordena por impacto y descarga el detalle
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Datos"
+        titulo="Registros"
+        descripcion="Explora los eventos de merma, ordena por impacto y descarga el detalle del corte"
+        acciones={
+          <>
+            {registros.data && (
+              <Badge tono="cyan">{integer(total)} registros</Badge>
+            )}
+            <button
+              type="button"
+              onClick={() => void exportar()}
+              disabled={exportando || total === 0}
+              className="border-border text-ink hover:border-cyan/50 focus-visible:ring-cyan focus-visible:ring-offset-page inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Icono nombre="descargar" className="size-3.5" />
+              {exportando ? "Generando…" : "Descargar CSV"}
+            </button>
+          </>
+        }
+      />
 
       <Card>
         <div className="flex flex-col gap-3 md:flex-row md:items-end">
@@ -161,14 +177,20 @@ export default function RegistrosPage() {
               Buscar
             </label>
             <div className="mt-1 flex gap-2">
-              <input
-                id="busqueda"
-                type="search"
-                value={busqueda}
-                onChange={(evento) => setBusqueda(evento.target.value)}
-                placeholder="Código, descripción, motivo, área…"
-                className="border-border bg-header text-ink placeholder:text-muted/70 focus-visible:ring-cyan focus-visible:ring-offset-page w-full rounded-md border px-3 py-2 text-xs focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-              />
+              <div className="relative flex-1">
+                <Icono
+                  nombre="buscar"
+                  className="text-muted pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2"
+                />
+                <input
+                  id="busqueda"
+                  type="search"
+                  value={busqueda}
+                  onChange={(evento) => setBusqueda(evento.target.value)}
+                  placeholder="Código, descripción, motivo, área…"
+                  className="border-border bg-header text-ink placeholder:text-muted/70 focus-visible:ring-cyan focus-visible:ring-offset-page w-full rounded-md border py-2 pr-3 pl-9 text-xs focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                />
+              </div>
               <button
                 type="submit"
                 className="border-border bg-surface text-ink hover:border-cyan/50 focus-visible:ring-cyan focus-visible:ring-offset-page rounded-md border px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
@@ -195,14 +217,6 @@ export default function RegistrosPage() {
                 ))}
               </select>
             </label>
-            <button
-              type="button"
-              onClick={() => void exportar()}
-              disabled={exportando || total === 0}
-              className="border-border text-ink hover:border-cyan/50 focus-visible:ring-cyan focus-visible:ring-offset-page rounded-md border px-3 py-2 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {exportando ? "Generando…" : "Descargar CSV"}
-            </button>
           </div>
         </div>
         {errorCsv && (

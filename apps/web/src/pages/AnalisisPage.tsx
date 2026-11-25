@@ -5,6 +5,7 @@ import { ChartCard } from "../components/charts/ChartCard";
 import { MonthlyBars } from "../components/charts/MonthlyBars";
 import { WeeklyLine } from "../components/charts/WeeklyLine";
 import { ErrorState } from "../components/feedback/ErrorState";
+import { PageHeader } from "../components/layout/PageHeader";
 import { ParetoDrawer } from "../components/tables/ParetoDrawer";
 import { ParetoTable } from "../components/tables/ParetoTable";
 import { Badge } from "../components/ui/Badge";
@@ -34,14 +35,18 @@ export default function AnalisisPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-ink text-lg font-semibold tracking-tight">
-          Análisis y proyección
-        </h1>
-        <p className="text-muted mt-0.5 text-xs">
-          Escenarios de cierre, tendencia y concentración de la merma
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Estudios"
+        titulo="Análisis y proyección"
+        descripcion="Escenarios de cierre, tendencia semanal y concentración de la merma en el corte seleccionado"
+        acciones={
+          parametros ? (
+            <Badge tono="cyan">
+              Meta de reducción {percent(parametros.meta_reduccion, 0)}
+            </Badge>
+          ) : undefined
+        }
+      />
 
       <Card
         title="Proyección de cierre"

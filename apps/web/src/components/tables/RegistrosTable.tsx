@@ -23,7 +23,7 @@ function Cabecera({
   if (!campo) {
     return (
       <th
-        className={`px-2 py-2 font-medium ${
+        className={`px-3 py-2.5 font-medium ${
           alineacion === "right" ? "text-right" : ""
         }`}
       >
@@ -38,7 +38,7 @@ function Cabecera({
       aria-sort={
         activo ? (order === "asc" ? "ascending" : "descending") : "none"
       }
-      className={`px-2 py-2 font-medium ${
+      className={`px-3 py-2.5 font-medium ${
         alineacion === "right" ? "text-right" : ""
       }`}
     >
@@ -67,10 +67,10 @@ export function RegistrosTable({
 }) {
   return (
     <div>
-      <div className="hidden overflow-x-auto md:block">
+      <div className="border-border hidden overflow-x-auto rounded-md border md:block">
         <table className="w-full border-collapse text-left text-xs">
           <thead>
-            <tr className="bg-header text-muted text-[10px] tracking-[0.08em] uppercase">
+            <tr className="bg-header/80 text-muted border-border border-b text-[10px] tracking-[0.08em] uppercase">
               <Cabecera
                 etiqueta="Fecha"
                 campo="fecha"
@@ -118,18 +118,18 @@ export function RegistrosTable({
             {filas.map((fila) => (
               <tr
                 key={fila.id}
-                className="border-border/70 hover:bg-header/40 border-b"
+                className="border-border/60 hover:bg-header/40 border-b transition-colors last:border-0"
               >
-                <td className="text-ink px-2 py-2 whitespace-nowrap">
+                <td className="text-ink px-3 py-2.5 whitespace-nowrap">
                   {dateLabel(fila.fecha)}
                 </td>
-                <td className="text-muted px-2 py-2 tabular-nums">
+                <td className="text-muted px-3 py-2.5 tabular-nums">
                   S{fila.semana_iso}
                 </td>
-                <td className="text-muted px-2 py-2 font-mono text-[11px]">
+                <td className="text-muted px-3 py-2.5 font-mono text-[11px]">
                   {fila.codigo_material}
                 </td>
-                <td className="text-ink max-w-[220px] truncate px-2 py-2">
+                <td className="text-ink max-w-[260px] truncate px-3 py-2.5">
                   {fila.descripcion}
                   {fila.es_duplicado && (
                     <Badge tono="alta" className="ml-2">
@@ -137,14 +137,14 @@ export function RegistrosTable({
                     </Badge>
                   )}
                 </td>
-                <td className="text-muted px-2 py-2">{fila.familia}</td>
-                <td className="text-muted px-2 py-2">{fila.programa}</td>
-                <td className="text-muted px-2 py-2 text-right tabular-nums">
+                <td className="text-muted px-3 py-2.5">{fila.familia}</td>
+                <td className="text-muted px-3 py-2.5">{fila.programa}</td>
+                <td className="text-muted px-3 py-2.5 text-right tabular-nums">
                   {integer(fila.cantidad)} {fila.um}
                 </td>
-                <td className="text-muted px-2 py-2">{fila.motivo}</td>
-                <td className="text-muted px-2 py-2">{fila.gestion}</td>
-                <td className="text-ink px-2 py-2 text-right tabular-nums">
+                <td className="text-muted px-3 py-2.5">{fila.motivo}</td>
+                <td className="text-muted px-3 py-2.5">{fila.gestion}</td>
+                <td className="text-ink px-3 py-2.5 text-right tabular-nums">
                   {money(fila.costo_total)}
                 </td>
               </tr>

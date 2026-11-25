@@ -12,6 +12,7 @@ import { ColdStartNotice } from "../components/feedback/ColdStartNotice";
 import { EmptyState } from "../components/feedback/EmptyState";
 import { ErrorState } from "../components/feedback/ErrorState";
 import { KpiStrip } from "../components/kpi/KpiStrip";
+import { PageHeader } from "../components/layout/PageHeader";
 import { GestionMatrix } from "../components/tables/GestionMatrix";
 import { ParetoDrawer } from "../components/tables/ParetoDrawer";
 import { ParetoTable } from "../components/tables/ParetoTable";
@@ -50,22 +51,18 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-ink text-lg font-semibold tracking-tight">
-            Panel gerencial
-          </h1>
-          <p className="text-muted mt-0.5 text-xs">
-            {dateLabel(filtros.desde)} — {dateLabel(filtros.hasta)} · merma de
-            materiales
-          </p>
-        </div>
-        {kpis.data && (
-          <Badge tono="cyan">
-            {integer(kpis.data.eventos)} eventos en el corte
-          </Badge>
-        )}
-      </div>
+      <PageHeader
+        eyebrow="General"
+        titulo="Panel gerencial"
+        descripcion={`Corte ${dateLabel(filtros.desde)} — ${dateLabel(filtros.hasta)} · merma de materiales, control y proyección`}
+        acciones={
+          kpis.data ? (
+            <Badge tono="cyan">
+              {integer(kpis.data.eventos)} eventos en el corte
+            </Badge>
+          ) : undefined
+        }
+      />
 
       {kpis.isPending && kpis.failureCount > 0 && <ColdStartNotice />}
 

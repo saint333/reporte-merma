@@ -5,31 +5,34 @@ import type { FilaCorte } from "../../lib/types";
 export function GestionMatrix({ filas }: { filas: FilaCorte[] }) {
   return (
     <div>
-      <div className="hidden overflow-x-auto md:block">
+      <div className="border-border hidden overflow-x-auto rounded-md border md:block">
         <table className="w-full border-collapse text-left text-xs">
           <thead>
-            <tr className="bg-header text-muted text-[10px] tracking-[0.08em] uppercase">
-              <th className="px-2 py-2 font-medium">Estado</th>
-              <th className="px-2 py-2 text-right font-medium">Eventos</th>
-              <th className="px-2 py-2 text-right font-medium">Costo</th>
-              <th className="px-2 py-2 text-right font-medium">%</th>
-              <th className="px-2 py-2 font-medium">Decisión</th>
+            <tr className="bg-header/80 text-muted border-border border-b text-[10px] tracking-[0.08em] uppercase">
+              <th className="px-3 py-2.5 font-medium">Estado</th>
+              <th className="px-3 py-2.5 text-right font-medium">Eventos</th>
+              <th className="px-3 py-2.5 text-right font-medium">Costo</th>
+              <th className="px-3 py-2.5 text-right font-medium">%</th>
+              <th className="px-3 py-2.5 font-medium">Decisión</th>
             </tr>
           </thead>
           <tbody>
             {filas.map((fila) => (
-              <tr key={fila.clave} className="border-border/70 border-b">
-                <td className="text-ink px-2 py-2 font-medium">{fila.clave}</td>
-                <td className="text-muted px-2 py-2 text-right tabular-nums">
+              <tr
+                key={fila.clave}
+                className="border-border/60 hover:bg-header/40 border-b transition-colors last:border-0"
+              >
+                <td className="text-ink px-3 py-2.5 font-medium">{fila.clave}</td>
+                <td className="text-muted px-3 py-2.5 text-right tabular-nums">
                   {integer(fila.eventos)}
                 </td>
-                <td className="text-ink px-2 py-2 text-right tabular-nums">
+                <td className="text-ink px-3 py-2.5 text-right tabular-nums">
                   {money(fila.costo)}
                 </td>
-                <td className="text-muted px-2 py-2 text-right tabular-nums">
+                <td className="text-muted px-3 py-2.5 text-right tabular-nums">
                   {percent(Number(fila.participacion), 2)}
                 </td>
-                <td className="text-muted px-2 py-2">
+                <td className="text-muted px-3 py-2.5">
                   {DECISIONES[fila.clave] ?? "Revisar con el área responsable"}
                 </td>
               </tr>

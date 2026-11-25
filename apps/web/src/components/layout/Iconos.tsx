@@ -6,7 +6,9 @@ export type IconoNombre =
   | "analisis"
   | "cargas"
   | "menu"
-  | "cerrar";
+  | "cerrar"
+  | "descargar"
+  | "buscar";
 
 const TRAZOS: Record<IconoNombre, ReactNode> = {
   panel: (
@@ -36,7 +38,19 @@ const TRAZOS: Record<IconoNombre, ReactNode> = {
     </>
   ),
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  descargar: (
+    <>
+      <path d="M12 4v11m0 0 4.2-4.2M12 15l-4.2-4.2" />
+      <path d="M4.5 17.5V19a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-1.5" />
+    </>
+  ),
   cerrar: <path d="M6 6l12 12M18 6L6 18" />,
+  buscar: (
+    <>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M16 16l4.5 4.5" />
+    </>
+  ),
 };
 
 export function Icono({

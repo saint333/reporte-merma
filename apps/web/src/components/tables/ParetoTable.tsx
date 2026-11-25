@@ -31,19 +31,19 @@ export function ParetoTable({
 
   return (
     <div>
-      <div className="hidden overflow-x-auto md:block">
+      <div className="border-border hidden overflow-x-auto rounded-md border md:block">
         <table className="w-full border-collapse text-left text-xs">
           <thead>
-            <tr className="bg-header text-muted text-[10px] tracking-[0.08em] uppercase">
-              <th className="px-2 py-2 font-medium">#</th>
-              <th className="px-2 py-2 font-medium">Código</th>
-              <th className="px-2 py-2 font-medium">Descripción</th>
-              <th className="px-2 py-2 font-medium">Familia</th>
-              <th className="px-2 py-2 text-right font-medium">Eventos</th>
-              <th className="px-2 py-2 text-right font-medium">Costo</th>
-              <th className="px-2 py-2 text-right font-medium">% part.</th>
-              <th className="px-2 py-2 font-medium">Acumulado</th>
-              <th className="px-2 py-2 font-medium">Clase</th>
+            <tr className="bg-header/80 text-muted border-border border-b text-[10px] tracking-[0.08em] uppercase">
+              <th className="px-3 py-2.5 font-medium">#</th>
+              <th className="px-3 py-2.5 font-medium">Código</th>
+              <th className="px-3 py-2.5 font-medium">Descripción</th>
+              <th className="px-3 py-2.5 font-medium">Familia</th>
+              <th className="px-3 py-2.5 text-right font-medium">Eventos</th>
+              <th className="px-3 py-2.5 text-right font-medium">Costo</th>
+              <th className="px-3 py-2.5 text-right font-medium">% part.</th>
+              <th className="px-3 py-2.5 font-medium">Acumulado</th>
+              <th className="px-3 py-2.5 font-medium">Clase</th>
             </tr>
           </thead>
           <tbody>
@@ -59,14 +59,14 @@ export function ParetoTable({
                     activar(fila);
                   }
                 }}
-                className={`border-border/70 border-b ${
+                className={`border-border/60 border-b transition-colors last:border-0 ${
                   onSeleccionar
                     ? "hover:bg-header/60 focus-visible:ring-cyan focus-visible:ring-inset cursor-pointer focus-visible:ring-2 focus-visible:outline-none"
                     : ""
                 }`}
               >
                 <td
-                  className={`px-2 py-2 tabular-nums ${
+                  className={`px-3 py-2.5 tabular-nums ${
                     fila.clase_abc.startsWith("A")
                       ? "border-l-2 border-l-red"
                       : ""
@@ -74,26 +74,26 @@ export function ParetoTable({
                 >
                   {fila.rank}
                 </td>
-                <td className="text-muted px-2 py-2 font-mono text-[11px]">
+                <td className="text-muted px-3 py-2.5 font-mono text-[11px]">
                   {fila.codigo}
                 </td>
-                <td className="text-ink max-w-[260px] truncate px-2 py-2">
+                <td className="text-ink max-w-[280px] truncate px-3 py-2.5">
                   {fila.descripcion}
                 </td>
-                <td className="text-muted px-2 py-2">{fila.familia}</td>
-                <td className="text-muted px-2 py-2 text-right tabular-nums">
+                <td className="text-muted px-3 py-2.5">{fila.familia}</td>
+                <td className="text-muted px-3 py-2.5 text-right tabular-nums">
                   {integer(fila.eventos)}
                 </td>
-                <td className="text-ink px-2 py-2 text-right tabular-nums">
+                <td className="text-ink px-3 py-2.5 text-right tabular-nums">
                   {money(fila.costo)}
                 </td>
-                <td className="text-muted px-2 py-2 text-right tabular-nums">
+                <td className="text-muted px-3 py-2.5 text-right tabular-nums">
                   {percent(Number(fila.participacion), 2)}
                 </td>
-                <td className="px-2 py-2">
+                <td className="px-3 py-2.5">
                   <BarraAcumulado valor={fila.acumulado} />
                 </td>
-                <td className="px-2 py-2">
+                <td className="px-3 py-2.5">
                   <Badge
                     tono={tonoClase(fila.clase_abc)}
                     className="w-6 justify-center"

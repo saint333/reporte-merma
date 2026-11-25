@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 
 import { ColdStartNotice } from "../components/feedback/ColdStartNotice";
 import { ErrorState, mensajeDeError } from "../components/feedback/ErrorState";
+import { PageHeader } from "../components/layout/PageHeader";
+import { Badge } from "../components/ui/Badge";
 import { Card } from "../components/ui/Card";
 import { Skeleton } from "../components/ui/Skeleton";
 import { guardarTokenAdmin, leerTokenAdmin, subirCarga } from "../lib/api";
@@ -113,13 +115,16 @@ export default function CargasPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-ink text-lg font-semibold tracking-tight">Cargas</h1>
-        <p className="text-muted mt-0.5 text-xs">
-          Sube el Excel del reporte y la API reemplaza o agrega los datos sin
-          pasar por tu máquina
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Datos"
+        titulo="Cargas"
+        descripcion="Sube el Excel del reporte y la API reemplaza o agrega los datos sin pasar por tu máquina"
+        acciones={
+          requiereToken ? (
+            <Badge tono="media">Requiere clave de administración</Badge>
+          ) : undefined
+        }
+      />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Card
@@ -400,41 +405,44 @@ export default function CargasPage() {
             formulario de arriba.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-[11px]">
+          <div className="border-border overflow-x-auto rounded-md border">
+            <table className="w-full min-w-[720px] text-left text-[11px]">
               <thead>
-                <tr className="text-muted border-border border-b text-[10px] tracking-[0.08em] uppercase">
-                  <th className="py-2 pr-3 font-medium">Fecha</th>
-                  <th className="py-2 pr-3 font-medium">Archivo</th>
-                  <th className="py-2 pr-3 font-medium">Modo</th>
-                  <th className="py-2 pr-3 text-right font-medium">Insertadas</th>
-                  <th className="py-2 pr-3 text-right font-medium">Costo</th>
-                  <th className="py-2 pr-3 font-medium">Rango</th>
-                  <th className="py-2 font-medium">Estado</th>
+                <tr className="bg-header/80 text-muted border-border border-b text-[10px] tracking-[0.08em] uppercase">
+                  <th className="px-3 py-2.5 font-medium">Fecha</th>
+                  <th className="px-3 py-2.5 font-medium">Archivo</th>
+                  <th className="px-3 py-2.5 font-medium">Modo</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Insertadas</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Costo</th>
+                  <th className="px-3 py-2.5 font-medium">Rango</th>
+                  <th className="px-3 py-2.5 font-medium">Estado</th>
                 </tr>
               </thead>
               <tbody>
                 {cargas.data.map((carga) => (
-                  <tr key={carga.id} className="border-border/60 border-b last:border-0">
-                    <td className="text-ink py-2 pr-3 whitespace-nowrap">
+                  <tr
+                    key={carga.id}
+                    className="border-border/60 hover:bg-header/40 border-b transition-colors last:border-0"
+                  >
+                    <td className="text-ink px-3 py-2.5 whitespace-nowrap">
                       {dateTimeLabel(carga.creada_en)}
                     </td>
-                    <td className="text-muted max-w-[220px] truncate py-2 pr-3">
+                    <td className="text-muted max-w-[220px] truncate px-3 py-2.5">
                       {carga.archivo}
                     </td>
-                    <td className="text-muted py-2 pr-3">{carga.modo ?? "—"}</td>
-                    <td className="text-ink py-2 pr-3 text-right">
+                    <td className="text-muted px-3 py-2.5">{carga.modo ?? "—"}</td>
+                    <td className="text-ink px-3 py-2.5 text-right">
                       {integer(carga.filas_insertadas)}
                     </td>
-                    <td className="text-ink py-2 pr-3 text-right whitespace-nowrap">
+                    <td className="text-ink px-3 py-2.5 text-right whitespace-nowrap">
                       {money(carga.costo_total ?? "0")}
                     </td>
-                    <td className="text-muted py-2 pr-3 whitespace-nowrap">
+                    <td className="text-muted px-3 py-2.5 whitespace-nowrap">
                       {carga.desde && carga.hasta
                         ? `${dateLabel(carga.desde)} – ${dateLabel(carga.hasta)}`
                         : "—"}
                     </td>
-                    <td className="py-2">
+                    <td className="px-3 py-2.5">
                       <EstadoCarga estado={carga.estado} />
                     </td>
                   </tr>
