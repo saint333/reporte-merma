@@ -135,6 +135,8 @@ Comprobación por HTTP contra las URLs reales (sin navegador):
 | Preflight `OPTIONS /cargas` | `204`, `allow-methods: GET, POST, OPTIONS`, `allow-headers: content-type, x-admin-token, x-request-id` |
 | Cabeceras de Netlify | `X-Robots-Tag: noindex, nofollow`, `X-Frame-Options: DENY`, HSTS con `preload` |
 | `POST /cargas` sin cabecera y sin archivo | `400 ARCHIVO_REQUERIDO`: no exige clave |
+| `POST /cargas?modo=append` con el Excel real, sin cabecera | `200`, `ya_cargado: true`, `insertadas: 0`, 1,795 leídas (08/05–23/11), `costo_total 20383.7525` |
+| `GET /cargas` | historial con la carga `completada` de 1,795 filas; la subida repetida no crea registro porque no escribe nada |
 | Workflow `CI/CD` en el push de `main` | `Pruebas y build` y `Migrar Neon y desplegar la API` en success |
 
 Queda como revisión manual en navegador la lista de arriba: móvil a 375 px, export desde la UI y recarga de una URL con filtros.
