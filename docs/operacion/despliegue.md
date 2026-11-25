@@ -108,14 +108,14 @@ En DevTools → Network, `/api/v1/kpis` debe responder `200` sin errores de CORS
 
 Prueba funcional mínima:
 
-- [ ] El dashboard abre con `$17,999.60` y 1,618 eventos.
-- [ ] “Todo el registro” muestra `$20,383.75` y 1,795 eventos.
-- [ ] El filtro `2026-09` muestra `$9,108.95`.
-- [ ] Recargar una URL con filtros conserva la selección.
-- [ ] El CSV descarga correctamente.
-- [ ] La pestaña **Cargas** lista el historial y sube el mismo archivo con `ya_cargado: true`.
-- [ ] Un push a `main` dispara el workflow y el deploy de Render queda **Live**.
-- [ ] En móvil (375 px) no hay scroll horizontal.
+- [x] El dashboard abre con `$17,999.60` y 1,618 eventos.
+- [x] “Todo el registro” muestra `$20,383.75` y 1,795 eventos.
+- [x] El filtro `2026-09` muestra `$9,108.95`.
+- [x] Recargar una URL con filtros conserva la selección.
+- [x] El CSV descarga correctamente.
+- [x] La pestaña **Cargas** lista el historial y sube el mismo archivo con `ya_cargado: true`.
+- [x] Un push a `main` dispara el workflow y el deploy de Render queda **Live**.
+- [ ] En móvil (375 px) no hay scroll horizontal. **Corregido el 25/11/2026**, pendiente de confirmar en producción tras el deploy (ver abajo).
 
 ### Verificación en producción · 25/11/2026
 
@@ -130,7 +130,7 @@ Comprobación por HTTP contra las URLs reales (sin navegador):
 | `GET /meta` | rango 08/05–23/11 (200 días), 1,795 registros / 108 materiales / 13 motivos |
 | `GET /pareto` | 79 SKU, 14 clase A, top `14596.5068` (81.09%); la fila 15 queda en “ALTO IMPACTO” |
 | `GET /alertas` | 7 sin motivo por `$1,118.13`, 4 duplicados, `MALA IMPRESIÓN` (3), S40 al 31.0% |
-| `GET /registros.csv` | `text/csv`, `attachment`, 1,618 filas + cabecera, tildes y coma decimal correctas |
+| `GET /registros.csv` | `text/csv`, `attachment`, 1,618 filas + cabecera, tildes conservadas, separador coma y decimal con punto |
 | CORS `GET /salud` desde `https://reporte-merma.netlify.app` | `access-control-allow-origin` con ese origen, sin `*` |
 | Preflight `OPTIONS /cargas` | `204`, `allow-methods: GET, POST, OPTIONS`, `allow-headers: content-type, x-admin-token, x-request-id` |
 | Cabeceras de Netlify | `X-Robots-Tag: noindex, nofollow`, `X-Frame-Options: DENY`, HSTS con `preload` |
@@ -139,7 +139,33 @@ Comprobación por HTTP contra las URLs reales (sin navegador):
 | `GET /cargas` | historial con la carga `completada` de 1,795 filas; la subida repetida no crea registro porque no escribe nada |
 | Workflow `CI/CD` en el push de `main` | `Pruebas y build` y `Migrar Neon y desplegar la API` en success |
 
-Queda como revisión manual en navegador la lista de arriba: móvil a 375 px, export desde la UI y recarga de una URL con filtros.
+### Revisión en navegador · 25/11/2026
+
+Recorrido automatizado con Edge headless sobre la app en local (`vite dev`)
+contra la API local con los mismos 1,795 hechos, y las comprobaciones ya
+registradas arriba contra la URL pública.
+
+| Comprobación | Resultado |
+|---|---|
+| Dashboard del corte | `$17,999.60` · 1,618 eventos · ticket `$11.12` · 62.4% · 14.90 pallets |
+| Vista «Todo el registro» | `$20,383.75` · actualiza `desde`/`hasta` en la URL |
+| Recarga con filtros | el selector conserva «Todo el registro» |
+| Filtro `2026-09` | `$9,108.95` · 320 eventos · 7 páginas de 50 |
+| Filtro familia `BOLSAS` | 7 eventos · `$3,897.00` |
+| Serie semanal | pico marcado como **S40** |
+| Pareto | badges 79 SKUs / 14 A, fila 15 «ALTO IMPACTO», acumulado 79.32% en la 14 |
+| Alertas | 7 sin motivo por `$1,118.13` |
+| CSV desde la UI | 1,618 filas sin filtro y 320 con `mes=2026-09`; separador coma, decimal con punto, tildes y BOM UTF-8 |
+| Pantalla **Cargas** | historial con la carga `completada` y sin campo de clave |
+| Subida del mismo archivo | «El archivo ya estaba cargado», 1,795 leídas, `$20,383.75`, 0 insertadas |
+| Móvil 375 px | **desborde de 216 px** en el dashboard, corregido (ver abajo) |
+
+El desborde lo producía la tabla accesible de las gráficas: `sr-only` estaba en
+el `<table>` y, como el ancho de una tabla es un mínimo, el documento crecía
+hasta 591 px. Ahora la clase va en un `<div>` contenedor.
+
+Queda pendiente confirmar el móvil con el deploy desplegado, probar el rollback
+y sincronizar el Blueprint de Render si cambia `render.yaml`.
 
 ## 5. Cargar datos desde la web
 
@@ -187,3 +213,4 @@ Secretos en GitHub → **Settings → Secrets and variables → Actions**:
 - **Rollback de Netlify:** Deploys → seleccionar el deploy anterior → **Publish deploy**.
 - **Cold start:** el plan free de Render suspende la API tras unos minutos de inactividad. La primera petición puede tardar decenas de segundos; la UI muestra el aviso de arranque.
 - **Secretos:** `DATABASE_URL` solo vive en Render/Neon y en el entorno local; nunca en el repositorio ni en Netlify.
+- **Backup:** volcado con `pg_dump` 18, verificación en base desechable y restauración en una rama de Neon en [Backup y restauración](backup.md). El archivo del 25/11/2026 está en `backups/` (ignorado por Git).
