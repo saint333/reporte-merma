@@ -8,6 +8,32 @@
 
 ---
 
+## 0. Estado de implementación
+
+Implementado en este corte:
+
+| Endpoint | Estado | Código |
+|---|---|---|
+| `GET /api/v1/salud` | Listo | `src/routes/salud.ts` |
+| `GET /api/v1/meta` | Listo | `src/routes/meta.ts` |
+| `GET /api/v1/kpis` | Listo | `src/routes/kpis.ts`, `src/services/kpis.ts` |
+
+También están listos el parseo Zod de filtros (`src/http/filtros.ts`), el sobre `data/meta`, el formato único de error, CORS por lista blanca, `buildApp()` y el arranque con cierre ordenado (`src/server.ts`).
+
+Pendiente para completar el Paso 3: `/series/*`, `/cortes/*`, `/pareto`, `/proyeccion`, `/registros`, `/alertas`, caché TTL, Swagger, helmet y rate limit.
+
+Pruebas:
+
+- `tests/api.test.ts`: dataset fijo en una base de prueba (9 casos: salud, meta, KPIs, filtros, 422, CORS, 404 y 503).
+- `tests/api.parity.test.ts`: cifras de control contra el dataset real; se activa con `PARITY_DATABASE_URL`.
+
+```bash
+TEST_DATABASE_URL=postgresql://merma:merma@localhost:5432/merma_test npm test
+PARITY_DATABASE_URL=postgresql://merma:merma@localhost:5432/merma npm test
+```
+
+---
+
 ## 1. Estructura de la app
 
 ```text

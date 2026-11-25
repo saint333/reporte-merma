@@ -32,7 +32,8 @@ Plan de migración del libro `REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK` a una apli
 
 - **Paso 1 implementado:** esquema Postgres, migraciones SQL y verificación en `apps/api`.
 - **Paso 2 implementado:** ETL en TypeScript con `dry-run`, `append`, `replace` y reporte de calidad.
-- Pasos 3 a 7: planificados en `docs/`.
+- **Paso 3 en curso:** API Fastify con `/api/v1/salud`, `/api/v1/meta` y `/api/v1/kpis`, filtros validados y pruebas de paridad. El resto de endpoints sigue en `docs/05`.
+- Pasos 4 a 7: planificados en `docs/`.
 - El Excel original está en la raíz y no se modifica; el ETL lo lee por ruta y no se versiona.
 
 ### Levantar el esquema local
@@ -56,6 +57,36 @@ npm test             # reglas + integración (esta última requiere TEST_DATABAS
 ```
 
 Resultado esperado: 1,795 hechos, 108 materiales, $20,383.7525 y 7 observaciones. Detalle operativo en [`docs/operacion/carga.md`](docs/operacion/carga.md).
+
+### Levantar la API
+
+```bash
+cd apps/api
+cp .env.example .env     # DATABASE_URL, PORT, CORS_ORIGINS, APP_ENV
+npm run dev              # http://localhost:8000/api/v1/salud
+npm run build && npm start
+```
+
+Endpoints disponibles:
+
+```bash
+curl -s localhost:8000/api/v1/salud
+curl -s localhost:8000/api/v1/meta
+curl -s "localhost:8000/api/v1/kpis?desde=2026-05-08&hasta=2026-11-11"
+curl -s "localhost:8000/api/v1/kpis?desde=2026-05-08&hasta=2026-11-11&gestion=Controlable"
+```
+
+Pruebas de la API:
+
+```bash
+# dataset fijo (requiere migraciones aplicadas en una base *test*)
+TEST_DATABASE_URL=postgresql://merma:merma@localhost:5432/merma_test npm test
+
+# paridad contra el dataset real cargado
+PARITY_DATABASE_URL=postgresql://merma:merma@localhost:5432/merma npm test
+```
+
+La ventana 08/05–11/11 debe devolver `merma_total = 17999.6033`, `eventos = 1618` y `semana_pico = S40`.
 
 ## Antes de empezar
 
