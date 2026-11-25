@@ -31,8 +31,9 @@ Plan de migración del libro `REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK` a una apli
 ## Estado
 
 - **Paso 1 implementado:** esquema Postgres, migraciones SQL y verificación en `apps/api`.
-- Pasos 2 a 7: planificados en `docs/`.
-- El Excel original está en la raíz y no se modifica; se copiará a `data/source/` al iniciar el Paso 2.
+- **Paso 2 implementado:** ETL en TypeScript con `dry-run`, `append`, `replace` y reporte de calidad.
+- Pasos 3 a 7: planificados en `docs/`.
+- El Excel original está en la raíz y no se modifica; el ETL lo lee por ruta y no se versiona.
 
 ### Levantar el esquema local
 
@@ -44,6 +45,17 @@ cp .env.example .env
 npm run db:migrate
 npm run db:check     # 6 tablas · 2 vistas · 13 motivos · 3 parámetros
 ```
+
+### Cargar el Excel
+
+```bash
+cd apps/api
+npm run etl -- --file "../../REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK (1) (6).xlsx" --mode dry-run
+npm run etl -- --file "../../REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK (1) (6).xlsx" --mode append
+npm test             # reglas + integración (esta última requiere TEST_DATABASE_URL)
+```
+
+Resultado esperado: 1,795 hechos, 108 materiales, $20,383.7525 y 7 observaciones. Detalle operativo en [`docs/operacion/carga.md`](docs/operacion/carga.md).
 
 ## Antes de empezar
 

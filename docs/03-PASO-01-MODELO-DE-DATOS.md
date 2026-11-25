@@ -237,16 +237,20 @@ from ordenado o;
 
 ### Redondeo: punto crítico de paridad
 
-Excel usa `ROUND()` con **mitad hacia arriba**. En JavaScript, `number` es un binario de doble precisión y `Math.round()` no reproduce ese comportamiento en los empates (`x.5`), además de arrastrar error al multiplicar precios de 10 decimales. Con 1,795 filas la diferencia cambia centavos en las sumas.
+Excel usa `ROUND()` con **mitad hacia arriba** y evalúa el producto con unos **15 dígitos significativos**, no con el binario exacto. En JavaScript, `number` es un binario de doble precisión y `Math.round()` no reproduce ese comportamiento en los empates (`x.5`), además de arrastrar error al multiplicar precios de 10 decimales. Con 1,795 filas, ignorar esa precisión cambia el total en el cuarto decimal ($20,383.7522 en vez de $20,383.7525).
 
 ```ts
 // apps/api/src/etl/dinero.ts
-import Decimal from "decimal.js";
+import { Decimal } from "decimal.js";
 
 Decimal.set({ precision: 28, rounding: Decimal.ROUND_HALF_UP });
 
 export function costoTotal(cantidad: string, valorUnitario: string): string {
-  return new Decimal(cantidad).times(valorUnitario).toDecimalPlaces(4).toFixed(4);
+  return new Decimal(cantidad)
+    .times(valorUnitario)
+    .toSignificantDigits(15)              // misma precisión que Excel
+    .toDecimalPlaces(4, Decimal.ROUND_HALF_UP)
+    .toFixed(4);
 }
 ```
 

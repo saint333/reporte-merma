@@ -167,7 +167,7 @@ Cualquier diferencia mayor se considera **fallo**, no “ruido”.
 // apps/api/tests/paridad.test.ts
 import { readFileSync } from "node:fs";
 
-import Decimal from "decimal.js";
+import { Decimal } from "decimal.js";
 import { describe, expect, it } from "vitest";
 
 import { buildApp } from "../src/app.js";

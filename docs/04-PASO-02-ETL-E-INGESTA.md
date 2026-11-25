@@ -56,7 +56,7 @@ Si falla cualquier paso 2–6, **no se inserta nada**. Si falla el 7, rollback c
 | — | `semana_iso` | semana ISO 8601 calculada desde la fecha (`lunes` como inicio) |
 | — | `mes` | `YYYY-MM` a partir de la fecha |
 | — | `valor_unitario` | snapshot del maestro, como texto decimal |
-| — | `costo_total` | `decimal.js` con `ROUND_HALF_UP` a 4 decimales |
+| — | `costo_total` | `decimal.js`: producto normalizado a 15 dígitos y `ROUND_HALF_UP` a 4 decimales (así redondea Excel) |
 | — | `hash_fila` | `sha256(fecha|codigo|cantidad|motivo_original)` |
 | — | `origen_fila` | número de fila del Excel |
 
@@ -125,8 +125,8 @@ Validaciones:
 | Filas leídas | 1,795 |
 | Insertadas | 1,795 |
 | Errores | 0 |
-| Observadas | 3 (`MOTIVO_NO_CATALOGADO` o `MOTIVO_ALIAS`, según D2) + 4 (`POSIBLE_DUPLICADO`) = 7 |
-| Motivos no catalogados | `MALA IMPRESIÓN` × 3 ($39.31) |
+| Observadas | 3 (`MOTIVO_ALIAS`) + 4 (`POSIBLE_DUPLICADO`) = 7 |
+| Motivos con alias | `MALA IMPRESIÓN` × 3 ($39.3084) → `ERROR DE IMPRESIÓN` |
 | Sin clasificar (motivo válido, pendiente de auditoría) | `SIN CLASIFICAR` × 7 ($1,118.13) |
 
 ---
@@ -176,7 +176,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
 
-import Decimal from "decimal.js";
+import { Decimal } from "decimal.js";
 import ExcelJS from "exceljs";
 
 import { pool } from "../db.js";
@@ -207,7 +207,11 @@ export function hashFila(fecha: string, codigo: number, cantidad: string, motivo
 }
 
 export function costoTotal(cantidad: string, valorUnitario: string): string {
-  return new Decimal(cantidad).times(valorUnitario).toDecimalPlaces(4, Decimal.ROUND_HALF_UP).toFixed(4);
+  return new Decimal(cantidad)
+    .times(valorUnitario)
+    .toSignificantDigits(15)
+    .toDecimalPlaces(4, Decimal.ROUND_HALF_UP)
+    .toFixed(4);
 }
 
 /** Semana ISO 8601 (lunes = 1), equivalente a WEEKNUM(fecha; 21). */
@@ -478,7 +482,7 @@ console.log(JSON.stringify(await ejecutar(values.file, values.mode as Modo), nul
 
 ## 8. Reporte de carga
 
-Se escribe en `data/reports/carga-YYYYMMDD-HHMMSS.json` y se guarda el resumen en `carga.detalle` (JSONB):
+Se escribe en `data/reports/carga-<timestamp>.json` y se guarda el resumen en `carga.detalle` (JSONB):
 
 ```json
 {
@@ -487,15 +491,19 @@ Se escribe en `data/reports/carga-YYYYMMDD-HHMMSS.json` y se guarda el resumen e
   "modo": "append",
   "leidas": 1795,
   "insertadas": 1795,
+  "omitidas_por_existir": 0,
+  "duplicadas": 4,
   "errores": 0,
   "observaciones": 7,
+  "filas_observadas": 7,
   "desde": "2026-05-08",
   "hasta": "2026-11-23",
-  "costo_total": "20383.7500",
+  "costo_total": "20383.7525",
   "por_estado": { "ok": 1788, "observada": 7, "error": 0 },
-  "motivos_no_catalogados": [{ "motivo": "MALA IMPRESIÓN", "filas": [1640, 1741, 1777], "costo": "39.31" }],
+  "motivos_alias": [{ "motivo": "MALA IMPRESIÓN", "filas": [1640, 1741, 1777], "costo": "39.3084" }],
+  "motivos_no_catalogados": [],
   "posibles_duplicados": [
-    { "fecha": "2026-07-10", "codigo": 28100022, "cantidad": "90.0000", "filas": [658, 659] }
+    { "fecha": "2026-07-10", "codigo": 28100022, "cantidad": "90.0000", "filas": [353, 354], "costo_extra": "0.3262" }
   ],
   "duracion_ms": 2140
 }
@@ -513,11 +521,11 @@ docker compose up -d db
 cd apps/api && npm run db:migrate
 
 # 2. Carga (desde apps/api)
-npm run etl -- --file "../../data/source/REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK.xlsx" --mode append
+npm run etl -- --file "../../REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK (1) (6).xlsx" --mode append
 
 # 3. Verificación rápida
 psql "$DATABASE_URL" -c "select count(*), sum(costo_total) from merma.fact_merma;"
-# esperado: 1795 | 20383.7500
+# esperado: 1795 | 20383.7525
 ```
 
 Para CI y pruebas se usa un `fixture` de 40 filas representativas (no el archivo completo) y un test de contrato que valida el total de 1,795 con el archivo real marcado como `slow`.
@@ -526,11 +534,11 @@ Para CI y pruebas se usa un `fixture` de 40 filas representativas (no el archivo
 
 ## 10. Entregables del paso
 
-- [ ] `src/etl/load-xlsx.ts` con modos `dry-run | append | replace`.
-- [ ] `src/etl/reglas.ts` con `validarFila()` y `resolverMotivo()`.
-- [ ] `data/reports/` con el reporte de la carga real.
-- [ ] `tests/etl.test.ts`: 8 casos (fecha inválida, código inexistente, motivo alias, duplicado, cantidad 0, fila total, archivo sin hoja, idempotencia).
-- [ ] Documento `docs/operacion/carga.md` con el comando exacto y qué hacer ante errores.
+- [x] `src/etl/load-xlsx.ts` con modos `dry-run | append | replace`.
+- [x] `src/etl/reglas.ts` con `validarFila()` y `resolverMotivo()`.
+- [x] `data/reports/` con el reporte de la carga real.
+- [x] `tests/etl.test.ts` y `tests/etl.integration.test.ts`: 14 casos (reglas, redondeo, fechas, alias, duplicados, hojas faltantes, idempotencia y replace).
+- [x] Documento `docs/operacion/carga.md` con el comando exacto y qué hacer ante errores.
 
 ---
 

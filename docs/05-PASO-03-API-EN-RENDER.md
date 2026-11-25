@@ -471,7 +471,7 @@ Ejemplo de paridad:
 // apps/api/tests/paridad.test.ts
 import { readFileSync } from "node:fs";
 
-import Decimal from "decimal.js";
+import { Decimal } from "decimal.js";
 import { expect, it } from "vitest";
 
 import { buildApp } from "../src/app.js";
