@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --color-page: #0d1526;
+  --color-surface: #111827;
+  --color-header: #162033;
+  --color-border: #1e293b;
+  --color-ink: #f8fafc;
+  --color-muted: #94a3b8;
+  --color-cyan: #22d3ee;
+  --color-cyan-600: #06b6d4;
+  --color-orange: #fb923c;
+  --color-purple: #a78bfa;
+  --color-green: #34d399;
+  --color-amber: #fbbf24;
+  --color-red: #f43f5e;
+  --font-sans: "Segoe UI", "Inter", system-ui, sans-serif;
+  --shadow-card:
+    0 1px 0 0 rgba(148, 163, 184, 0.08) inset,
+    0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  --radius-card: 10px;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-page text-ink font-sans antialiased;
+    background-image:
+      radial-gradient(circle at 20% -10%, rgba(34, 211, 238, 0.08), transparent 32rem),
+      radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.06), transparent 28rem);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: rgba(34, 211, 238, 0.3);
+  }
+
+  select,
+  input,
+  button {
+    font: inherit;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

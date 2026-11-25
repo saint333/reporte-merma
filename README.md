@@ -33,8 +33,31 @@ Plan de migración del libro `REPORTE_MERMA_DIARIA_GERENCIAL_V7_DARK` a una apli
 - **Paso 1 implementado:** esquema Postgres, migraciones SQL y verificación en `apps/api`.
 - **Paso 2 implementado:** ETL en TypeScript con `dry-run`, `append`, `replace` y reporte de calidad.
 - **Paso 3 completo:** API Fastify con `/api/v1/salud`, `/meta`, `/kpis`, `/series/mensual`, `/series/semanal`, `/cortes/:dimension`, `/pareto`, `/proyeccion`, `/registros`, `/registros.csv` y `/alertas`; filtros Zod, caché TTL, Swagger UI en `/docs`, helmet, rate limit y pruebas de paridad.
-- Pasos 4 a 7: planificados en `docs/`.
+- **Paso 4 implementado:** SPA React con dashboard, registros y análisis; filtros en URL, cinco gráficas, Pareto, matriz de gestión, alertas, export CSV y estados de carga/error. Build y pruebas del frontend en `apps/web`.
+- Pasos 5 a 7: planificados en `docs/`.
 - El Excel original está en la raíz y no se modifica; el ETL lo lee por ruta y no se versiona.
+
+### Levantar el frontend
+
+```bash
+docker compose up -d db
+cd apps/api && npm run dev          # API en http://localhost:8000
+cd apps/web
+npm install
+cp .env.example .env                # VITE_API_URL=http://localhost:8000
+npm run dev                         # SPA en http://localhost:5173
+```
+
+Verificación del frontend:
+
+```bash
+cd apps/web
+npm run typecheck
+npm test
+npm run build
+```
+
+El sitio se publica en Netlify desde la raíz con `netlify.toml` (base `apps/web`, publish `dist` y fallback SPA). Configura `VITE_API_URL` en Netlify con la URL pública de Render.
 
 ### Levantar el esquema local
 
@@ -80,6 +103,7 @@ curl -s "localhost:8000/api/v1/cortes/motivos?desde=2026-05-08&hasta=2026-11-11"
 curl -s "localhost:8000/api/v1/pareto?desde=2026-05-08&hasta=2026-11-11"
 curl -s "localhost:8000/api/v1/proyeccion?desde=2026-05-08&hasta=2026-11-11"
 curl -s "localhost:8000/api/v1/registros?desde=2026-05-08&hasta=2026-11-11&per_page=10"
+curl -s "localhost:8000/api/v1/registros?desde=2026-05-08&hasta=2026-11-11&q=CLAMSHELL"
 curl -s "localhost:8000/api/v1/alertas?desde=2026-05-08&hasta=2026-11-11"
 ```
 
