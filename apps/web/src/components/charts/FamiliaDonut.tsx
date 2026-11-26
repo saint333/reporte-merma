@@ -27,8 +27,8 @@ export function FamiliaDonut({
 
   return (
     <>
-      <div className="flex h-full flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="relative h-56 w-full sm:h-full sm:w-1/2">
+      <div className="flex h-full flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="relative mx-auto h-44 w-full max-w-[240px] shrink-0 sm:mx-0 sm:h-full sm:max-w-none sm:w-1/2">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -60,7 +60,7 @@ export function FamiliaDonut({
             </span>
           </div>
         </div>
-        <ul className="grid w-full grid-cols-2 gap-x-3 gap-y-1.5 sm:w-1/2 sm:grid-cols-1">
+        <ul className="grid w-full grid-cols-2 gap-x-3 gap-y-1.5 sm:w-1/2 sm:grid-cols-1 sm:overflow-y-auto">
           {filas.map((fila, indice) => (
             <li
               key={fila.clave}

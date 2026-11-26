@@ -93,11 +93,11 @@ Marcar cada casilla al terminar. Orden recomendado: de la base visual hacia lo f
 **Criterio de aceptación:** misma información que hoy; en móvil cada fila se apila; el drawer sigue abriéndose con clic y con Enter.
 
 ### Fase 4 — Gráficos: estilo y responsive
-- [ ] Quitar alturas fijas: usar altura por breakpoint (ej. 220 px móvil, 300 px escritorio) en `ChartCard`.
-- [ ] Unificar tooltips (`ChartTooltip`) y ejes (tamaño de fuente, colores de `COLORES.muted`).
-- [ ] Agregar gradiente de área en `WeeklyLine` y `MonthlyBars`.
-- [ ] En `FamiliaDonut`, mover la leyenda debajo del gráfico en pantallas pequeñas.
-- [ ] Agregar `SelectButton` para alternar la métrica (costo / eventos) en `MonthlyBars`.
+- [x] Quitar alturas fijas: usar altura por breakpoint (ej. 220 px móvil, 300 px escritorio) en `ChartCard`.
+- [x] Unificar tooltips (`ChartTooltip`) y ejes (tamaño de fuente, colores de `COLORES.muted`).
+- [x] Agregar gradiente de área en `WeeklyLine` y `MonthlyBars`.
+- [x] En `FamiliaDonut`, mover la leyenda debajo del gráfico en pantallas pequeñas.
+- [x] Agregar `SelectButton` para alternar la métrica (costo / eventos) en `MonthlyBars`.
 
 **Criterio de aceptación:** ningún gráfico se corta ni se desborda en 360 px; los tooltips respetan la paleta.
 

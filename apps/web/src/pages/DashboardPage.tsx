@@ -135,7 +135,7 @@ export default function DashboardPage() {
                 ? `Promedio ajustado ${semanal.data.resumen.promedio_ajustado} · umbral ${semanal.data.resumen.umbral}`
                 : "Costo por semana ISO, promedio ajustado y semanas atípicas"
             }
-            altura={300}
+            altura="alta"
           >
             {semanal.isPending ? (
               <Skeleton className="h-full w-full" />
@@ -164,7 +164,7 @@ export default function DashboardPage() {
             <ChartCard
               titulo="Merma por motivo"
               subtitulo="Top motivos, color según gestionabilidad"
-              altura={360}
+              altura="alta"
             >
               {motivos.isPending ? (
                 <Skeleton className="h-full w-full" />
@@ -182,7 +182,7 @@ export default function DashboardPage() {
             <ChartCard
               titulo="Concentración por familia"
               subtitulo="Participación del costo total del corte"
-              altura={360}
+              altura="alta"
             >
               {familias.isPending ? (
                 <Skeleton className="h-full w-full" />
@@ -203,7 +203,7 @@ export default function DashboardPage() {
             <ChartCard
               titulo="Impacto por programa"
               subtitulo="Costo y peso relativo de cada programa"
-              altura={360}
+              altura="alta"
             >
               {programas.isPending ? (
                 <Skeleton className="h-full w-full" />
