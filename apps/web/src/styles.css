@@ -131,3 +131,152 @@
     padding: 1.25rem;
   }
 }
+
+/* PrimeReact · escala compacta para igualar la densidad de la app. */
+.p-component {
+  font-size: 0.75rem;
+}
+
+.p-inputtext,
+.p-dropdown,
+.p-dropdown-label,
+.p-dropdown-item,
+.p-dropdown-filter,
+.p-autocomplete,
+.p-autocomplete-input,
+.p-autocomplete-item,
+.p-inputnumber,
+.p-inputnumber-input,
+.p-password,
+.p-password-input,
+.p-calendar,
+.p-calendar .p-inputtext,
+.p-fileupload,
+.p-message,
+.p-dialog,
+.p-dialog-content,
+.p-datatable {
+  font-size: 0.75rem;
+}
+
+.p-button,
+.p-button .p-button-label,
+.p-button.p-button-sm {
+  font-size: 0.75rem;
+}
+
+.p-button .p-button-icon,
+.p-button.p-button-sm .p-button-icon {
+  font-size: 0.75rem;
+}
+
+.p-dialog .p-dialog-header .p-dialog-title {
+  font-size: 0.875rem;
+}
+
+.p-tag {
+  font-size: 0.625rem;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  font-size: 0.625rem;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  font-size: 0.75rem;
+}
+
+.p-datepicker {
+  font-size: 0.75rem;
+}
+
+.p-datepicker table td > span {
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.75rem;
+}
+
+.p-inputtext,
+.p-calendar .p-inputtext,
+.p-autocomplete-input,
+.p-inputnumber-input,
+.p-password-input {
+  padding: 0.375rem 0.75rem;
+}
+
+.p-dropdown .p-dropdown-trigger {
+  width: 2.5rem;
+}
+
+.p-dropdown-item,
+.p-autocomplete-item {
+  padding: 0.5rem 0.75rem;
+}
+
+.p-button {
+  padding: 0.375rem 0.75rem;
+}
+
+.p-button.p-button-sm {
+  padding: 0.375rem 0.625rem;
+}
+
+.p-button.p-button-icon-only {
+  width: 2.25rem;
+  padding: 0.375rem;
+}
+
+.p-button.p-button-icon-only.p-button-sm {
+  width: 2rem;
+  padding: 0.375rem;
+}
+
+.p-button.p-button-icon-only.p-button-rounded {
+  height: 2.25rem;
+}
+
+.p-button.p-button-icon-only.p-button-rounded.p-button-sm {
+  height: 2rem;
+}
+
+.p-dialog .p-dialog-header {
+  padding: 1rem 1.25rem;
+}
+
+.p-dialog .p-dialog-content {
+  padding: 0 1.25rem 1.25rem;
+}
+
+.p-dialog .p-dialog-footer {
+  padding: 0 1.25rem 1.25rem;
+}
+
+.p-message .p-message-wrapper {
+  padding: 0.5rem 0.75rem;
+}
+
+.p-message .p-message-icon {
+  font-size: 0.875rem;
+}
+
+.p-datatable .p-datatable-thead > tr > th,
+.p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.5rem 0.75rem;
+}
+
+/* Ripple más sutil y sin interferir con los clics. */
+.p-ink {
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.p-ink-active {
+  animation: ripple 0.35s ease-out;
+}
+
+@keyframes ripple {
+  to {
+    opacity: 0;
+    transform: scale(2);
+  }
+}

@@ -9,9 +9,11 @@ import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import "./styles.css";
 
+import { habilitarRippleRaton } from "./lib/ripple";
 import { router } from "./router";
 
 PrimeReact.ripple = true;
+habilitarRippleRaton();
 
 addLocale("es", {
   firstDayOfWeek: 1,
