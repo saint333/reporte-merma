@@ -287,7 +287,11 @@ export default function NuevoRegistroPage() {
               )}
             </Card>
             <Card title="Qué se guarda">
-              <ul className="text-muted space-y-2 text-[11px] leading-relaxed">
+              <details className="group">
+                <summary className="text-cyan cursor-pointer text-[11px] font-semibold underline underline-offset-4">
+                  Ver detalles técnicos
+                </summary>
+              <ul className="text-muted mt-3 space-y-2 text-[11px] leading-relaxed">
                 <li>
                   La semana ISO y el mes se calculan desde la fecha, igual que en
                   la carga del Excel.
@@ -314,6 +318,7 @@ export default function NuevoRegistroPage() {
                   Pareto.
                 </li>
               </ul>
+              </details>
             </Card>
             </>
           )}
