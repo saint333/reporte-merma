@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
-import { Skeleton } from "../ui/Skeleton";
+import { Skeleton } from "primereact/skeleton";
 import { FilterBar } from "./FilterBar";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";

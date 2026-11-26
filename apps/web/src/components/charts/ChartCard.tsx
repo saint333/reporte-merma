@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
+import { Card } from "primereact/card";
 
 import { cx } from "../../lib/cx";
-import { Card } from "../ui/Card";
 
 export function ChartCard({
   titulo,
@@ -20,10 +20,20 @@ export function ChartCard({
 }) {
   return (
     <Card
-      title={titulo}
-      subtitle={subtitulo}
-      action={accion}
       className={className}
+      header={
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-ink text-sm font-semibold">{titulo}</h2>
+            {subtitulo && (
+              <p className="text-muted mt-1 text-xs leading-relaxed">
+                {subtitulo}
+              </p>
+            )}
+          </div>
+          {accion && <div className="shrink-0">{accion}</div>}
+        </div>
+      }
     >
       <figure>
         <figcaption className="sr-only">

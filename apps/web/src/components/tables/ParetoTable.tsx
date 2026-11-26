@@ -1,6 +1,7 @@
+import { Tag } from "primereact/tag";
+
 import { integer, money, percent } from "../../lib/formatters";
 import type { FilaPareto } from "../../lib/types";
-import { Badge, tonoClase } from "../ui/Badge";
 
 function BarraAcumulado({ valor }: { valor: string }) {
   return (
@@ -94,12 +95,22 @@ export function ParetoTable({
                   <BarraAcumulado valor={fila.acumulado} />
                 </td>
                 <td className="px-3 py-2.5">
-                  <Badge
-                    tono={tonoClase(fila.clase_abc)}
-                    className="w-6 justify-center"
-                  >
-                    {fila.clase_abc.slice(0, 1)}
-                  </Badge>
+                  <Tag
+                    value={fila.clase_abc.slice(0, 1)}
+                    severity={
+                      fila.clase_abc.startsWith("A")
+                        ? "danger"
+                        : fila.clase_abc.startsWith("B")
+                          ? "warning"
+                          : undefined
+                    }
+                    className={`tag-app w-6 justify-center ${
+                      fila.clase_abc.startsWith("A") ||
+                      fila.clase_abc.startsWith("B")
+                        ? ""
+                        : "tag-app-neutral"
+                    }`}
+                  />
                 </td>
               </tr>
             ))}
@@ -124,12 +135,22 @@ export function ParetoTable({
                     {fila.descripcion}
                   </p>
                 </div>
-                <Badge
-                  tono={tonoClase(fila.clase_abc)}
-                  className="w-6 justify-center"
-                >
-                  {fila.clase_abc.slice(0, 1)}
-                </Badge>
+                <Tag
+                  value={fila.clase_abc.slice(0, 1)}
+                  severity={
+                    fila.clase_abc.startsWith("A")
+                      ? "danger"
+                      : fila.clase_abc.startsWith("B")
+                        ? "warning"
+                        : undefined
+                  }
+                  className={`tag-app w-6 justify-center ${
+                    fila.clase_abc.startsWith("A") ||
+                    fila.clase_abc.startsWith("B")
+                      ? ""
+                      : "tag-app-neutral"
+                  }`}
+                />
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
                 <span>

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { cx } from "../../lib/cx";
-import { Skeleton } from "../ui/Skeleton";
+import { Skeleton } from "primereact/skeleton";
 
 type Tono = "cyan" | "orange" | "purple" | "green" | "amber" | "red";
 

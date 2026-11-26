@@ -17,9 +17,8 @@ import { Link } from "react-router-dom";
 import { ColdStartNotice } from "../components/feedback/ColdStartNotice";
 import { ErrorState, mensajeDeError } from "../components/feedback/ErrorState";
 import { PageHeader } from "../components/layout/PageHeader";
-import { Badge } from "../components/ui/Badge";
-import { Card } from "../components/ui/Card";
-import { Skeleton } from "../components/ui/Skeleton";
+import { Card } from "primereact/card";
+import { Skeleton } from "primereact/skeleton";
 import { guardarTokenAdmin, leerTokenAdmin, subirCarga } from "../lib/api";
 import { dateLabel, dateTimeLabel, integer, money } from "../lib/formatters";
 import { cargasQuery, saludQuery } from "../lib/queries";
@@ -129,7 +128,11 @@ export default function CargasPage() {
         descripcion="Sube el Excel del reporte y la API reemplaza o agrega los datos sin pasar por tu máquina"
         acciones={
           requiereToken ? (
-            <Badge tono="media">Requiere clave de administración</Badge>
+            <Tag
+              value="Requiere clave de administración"
+              severity="warning"
+              className="tag-app"
+            />
           ) : undefined
         }
       />
@@ -137,7 +140,7 @@ export default function CargasPage() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Card
           title="Subir el reporte de mermas"
-          subtitle="Mismo ETL que la CLI: valida hojas, catálogos, motivos y duplicados antes de escribir."
+          subTitle="Mismo ETL que la CLI: valida hojas, catálogos, motivos y duplicados antes de escribir."
         >
           <form ref={formulario} onSubmit={(evento) => void enviar(evento)}>
             <div className="space-y-4">
@@ -295,7 +298,7 @@ export default function CargasPage() {
                   ? "El archivo ya estaba cargado"
                   : "Carga completada"
               }
-              subtitle={
+              subTitle={
                 reporte.ya_cargado
                   ? "El hash coincide con una carga vigente: no se insertó nada."
                   : `${reporte.archivo} procesado en ${(reporte.duracion_ms / 1000).toFixed(1)} s`
@@ -398,7 +401,7 @@ export default function CargasPage() {
 
       <Card
         title="Historial de cargas"
-        subtitle="Últimas 20 cargas del Excel registradas, por fecha de ejecución"
+        subTitle="Últimas 20 cargas del Excel registradas, por fecha de ejecución"
       >
         {cargas.isPending ? (
           <div className="space-y-2">

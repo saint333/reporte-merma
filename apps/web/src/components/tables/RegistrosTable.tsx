@@ -1,11 +1,11 @@
 import { Button } from "primereact/button";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
+import { Tag } from "primereact/tag";
 import { Link, useNavigate } from "react-router-dom";
 
 import { dateLabel, integer, money } from "../../lib/formatters";
 import type { Registro } from "../../lib/types";
-import { Badge } from "../ui/Badge";
 
 type Sort = "fecha" | "costo_total" | "cantidad" | "semana_iso";
 type Order = "asc" | "desc";
@@ -156,7 +156,9 @@ export function RegistrosTable({
             body={(fila: Registro) => (
               <div className="flex max-w-[260px] items-center gap-2">
                 <span className="truncate">{fila.descripcion}</span>
-                {fila.es_duplicado && <Badge tono="alta">dup</Badge>}
+                {fila.es_duplicado && (
+                  <Tag value="dup" severity="danger" className="tag-app" />
+                )}
               </div>
             )}
             style={{ minWidth: "14rem" }}
@@ -257,7 +259,7 @@ export function RegistrosTable({
               </span>
               {fila.es_duplicado && (
                 <span className="text-right">
-                  <Badge tono="alta">dup</Badge>
+                  <Tag value="dup" severity="danger" className="tag-app" />
                 </span>
               )}
             </div>

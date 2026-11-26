@@ -16,9 +16,9 @@ import { PageHeader } from "../components/layout/PageHeader";
 import { GestionMatrix } from "../components/tables/GestionMatrix";
 import { ParetoDrawer } from "../components/tables/ParetoDrawer";
 import { ParetoTable } from "../components/tables/ParetoTable";
-import { Badge } from "../components/ui/Badge";
-import { Card } from "../components/ui/Card";
-import { Skeleton } from "../components/ui/Skeleton";
+import { Card } from "primereact/card";
+import { Skeleton } from "primereact/skeleton";
+import { Tag } from "primereact/tag";
 import { dateLabel, integer, percent } from "../lib/formatters";
 import { useFiltros } from "../lib/filters";
 import {
@@ -57,9 +57,11 @@ export default function DashboardPage() {
         descripcion={`Corte ${dateLabel(filtros.desde)} — ${dateLabel(filtros.hasta)} · merma de materiales, control y proyección`}
         acciones={
           kpis.data ? (
-            <Badge tono="cyan">
-              {integer(kpis.data.eventos)} eventos en el corte
-            </Badge>
+            <Tag
+              value={`${integer(kpis.data.eventos)} eventos en el corte`}
+              severity="info"
+              className="tag-app"
+            />
           ) : undefined
         }
       />
@@ -101,13 +103,27 @@ export default function DashboardPage() {
             </ChartCard>
 
             <Card
-              title="Alertas de calidad"
-              subtitle="Prioriza lo que requiere acción esta semana"
               className="xl:col-span-4"
-              action={
-                alertas.data ? (
-                  <Badge tono="media">{alertas.data.length} activas</Badge>
-                ) : undefined
+              header={
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="text-ink text-sm font-semibold">
+                      Alertas de calidad
+                    </h2>
+                    <p className="text-muted mt-1 text-xs leading-relaxed">
+                      Prioriza lo que requiere acción esta semana
+                    </p>
+                  </div>
+                  <div className="shrink-0">
+                    {alertas.data ? (
+                      <Tag
+                        value={`${alertas.data.length} activas`}
+                        severity="warning"
+                        className="tag-app"
+                      />
+                    ) : undefined}
+                  </div>
+                </div>
               }
             >
               <AlertList
@@ -213,15 +229,33 @@ export default function DashboardPage() {
           </div>
 
           <Card
-            title="Pareto de SKUs"
-            subtitle="Selecciona una fila para ver sus eventos"
-            action={
-              pareto.data ? (
-                <div className="flex gap-1.5">
-                  <Badge tono="cyan">{pareto.data.resumen.skus} SKUs</Badge>
-                  <Badge tono="A">{pareto.data.resumen.clase_a} A</Badge>
+            header={
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="text-ink text-sm font-semibold">
+                    Pareto de SKUs
+                  </h2>
+                  <p className="text-muted mt-1 text-xs leading-relaxed">
+                    Selecciona una fila para ver sus eventos
+                  </p>
                 </div>
-              ) : undefined
+                <div className="shrink-0">
+                  {pareto.data ? (
+                    <div className="flex gap-1.5">
+                      <Tag
+                        value={`${pareto.data.resumen.skus} SKUs`}
+                        severity="info"
+                        className="tag-app"
+                      />
+                      <Tag
+                        value={`${pareto.data.resumen.clase_a} A`}
+                        severity="danger"
+                        className="tag-app"
+                      />
+                    </div>
+                  ) : undefined}
+                </div>
+              </div>
             }
           >
             {pareto.isPending ? (
@@ -262,7 +296,7 @@ export default function DashboardPage() {
 
           <Card
             title="Matriz de gestionabilidad"
-            subtitle="Qué se puede controlar y qué decisión tomar"
+            subTitle="Qué se puede controlar y qué decisión tomar"
           >
             {gestion.isPending ? (
               <div className="space-y-2">

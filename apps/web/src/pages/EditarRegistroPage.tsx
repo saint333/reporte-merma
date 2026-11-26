@@ -12,11 +12,11 @@ import {
   type ValoresRegistro,
 } from "../components/forms/CamposRegistro";
 import { PageHeader } from "../components/layout/PageHeader";
-import { Badge } from "../components/ui/Badge";
-import { Card } from "../components/ui/Card";
+import { Card } from "primereact/card";
+import { Tag } from "primereact/tag";
 import { Dato } from "../components/ui/Dato";
 import { CLASE_ETIQUETA } from "../components/ui/estilos";
-import { Skeleton } from "../components/ui/Skeleton";
+import { Skeleton } from "primereact/skeleton";
 import {
   actualizarRegistro,
   guardarTokenAdmin,
@@ -113,7 +113,7 @@ function FormularioEdicion({ registro }: { registro: Registro }) {
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
       <Card
         title="Datos del evento"
-        subtitle={`Evento #${registro.id}. Al guardar se recalculan la semana ISO, el valor unitario y el costo total.`}
+        subTitle={`Evento #${registro.id}. Al guardar se recalculan la semana ISO, el valor unitario y el costo total.`}
       >
         {catalogos.isPending ? (
           <div className="space-y-3">
@@ -205,7 +205,7 @@ function FormularioEdicion({ registro }: { registro: Registro }) {
         {guardado ? (
           <Card
             title="Cambios guardados"
-            subtitle="El evento quedó actualizado y el antes/después se registró en el historial."
+            subTitle="El evento quedó actualizado y el antes/después se registró en el historial."
           >
             <div className="grid grid-cols-2 gap-2">
               <Dato
@@ -322,7 +322,13 @@ export default function EditarRegistroPage() {
         eyebrow="Datos"
         titulo="Editar registro"
         descripcion="Corrige la fecha, el material, la cantidad o el motivo; el costo y la semana se recalculan solos."
-        acciones={<Badge tono="cyan">Evento #{registroId}</Badge>}
+        acciones={
+          <Tag
+            value={`Evento #${registroId}`}
+            severity="info"
+            className="tag-app"
+          />
+        }
       />
 
       {registro.isPending ? (

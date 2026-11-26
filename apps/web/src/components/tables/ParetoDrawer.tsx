@@ -5,7 +5,7 @@ import { Button } from "primereact/button";
 import { dateLabel, money } from "../../lib/formatters";
 import { registrosSkuQuery } from "../../lib/queries";
 import type { FilaPareto, Filtros } from "../../lib/types";
-import { Skeleton } from "../ui/Skeleton";
+import { Skeleton } from "primereact/skeleton";
 import { ErrorState } from "../feedback/ErrorState";
 
 export function ParetoDrawer({

@@ -12,11 +12,11 @@ import {
   type ValoresRegistro,
 } from "../components/forms/CamposRegistro";
 import { PageHeader } from "../components/layout/PageHeader";
-import { Badge } from "../components/ui/Badge";
-import { Card } from "../components/ui/Card";
+import { Card } from "primereact/card";
+import { Tag } from "primereact/tag";
 import { Dato } from "../components/ui/Dato";
 import { CLASE_ETIQUETA } from "../components/ui/estilos";
-import { Skeleton } from "../components/ui/Skeleton";
+import { Skeleton } from "primereact/skeleton";
 import {
   crearRegistroManual,
   guardarTokenAdmin,
@@ -115,7 +115,11 @@ export default function NuevoRegistroPage() {
         descripcion="Agrega un evento de merma que no viene en el Excel: el sistema calcula semana, valor unitario y costo con las mismas reglas de la carga."
         acciones={
           requiereToken ? (
-            <Badge tono="media">Requiere clave de administración</Badge>
+            <Tag
+              value="Requiere clave de administración"
+              severity="warning"
+              className="tag-app"
+            />
           ) : undefined
         }
       />
@@ -123,7 +127,7 @@ export default function NuevoRegistroPage() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Card
           title="Datos del evento"
-          subtitle="El material sale del maestro; el motivo se elige del catálogo o se escribe tal como llega, y se resuelve como en el Excel."
+          subTitle="El material sale del maestro; el motivo se elige del catálogo o se escribe tal como llega, y se resuelve como en el Excel."
         >
           {catalogos.isPending ? (
             <div className="space-y-3">
@@ -206,7 +210,7 @@ export default function NuevoRegistroPage() {
           {creado ? (
             <Card
               title="Registro guardado"
-              subtitle="Ya forma parte del detalle, los KPIs y las gráficas del dashboard."
+              subTitle="Ya forma parte del detalle, los KPIs y las gráficas del dashboard."
             >
               <div className="grid grid-cols-2 gap-2">
                 <Dato

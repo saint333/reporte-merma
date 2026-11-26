@@ -8,9 +8,9 @@ import { ErrorState } from "../components/feedback/ErrorState";
 import { PageHeader } from "../components/layout/PageHeader";
 import { ParetoDrawer } from "../components/tables/ParetoDrawer";
 import { ParetoTable } from "../components/tables/ParetoTable";
-import { Badge } from "../components/ui/Badge";
-import { Card } from "../components/ui/Card";
-import { Skeleton } from "../components/ui/Skeleton";
+import { Card } from "primereact/card";
+import { Skeleton } from "primereact/skeleton";
+import { Tag } from "primereact/tag";
 import { money, percent } from "../lib/formatters";
 import { useFiltros } from "../lib/filters";
 import {
@@ -41,16 +41,18 @@ export default function AnalisisPage() {
         descripcion="Escenarios de cierre, tendencia semanal y concentración de la merma en el corte seleccionado"
         acciones={
           parametros ? (
-            <Badge tono="cyan">
-              Meta de reducción {percent(parametros.meta_reduccion, 0)}
-            </Badge>
+            <Tag
+              value={`Meta de reducción ${percent(parametros.meta_reduccion, 0)}`}
+              severity="info"
+              className="tag-app"
+            />
           ) : undefined
         }
       />
 
       <Card
         title="Proyección de cierre"
-        subtitle="Tres escenarios sobre las semanas restantes de la campaña"
+        subTitle="Tres escenarios sobre las semanas restantes de la campaña"
       >
         {proyeccion.isPending ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -82,7 +84,7 @@ export default function AnalisisPage() {
                       {escenario.nombre}
                     </p>
                     {escenario.id === "meta" && (
-                      <Badge tono="cyan">objetivo</Badge>
+                      <Tag value="objetivo" severity="info" className="tag-app" />
                     )}
                   </div>
                   <p
@@ -185,16 +187,37 @@ export default function AnalisisPage() {
       </div>
 
       <Card
-        title="Pareto completo"
-        subtitle="Todas las SKUs con merma en el rango; haz clic para ver eventos"
-        action={
-          pareto.data ? (
-            <div className="flex gap-1.5">
-              <Badge tono="A">{pareto.data.resumen.clase_a} A</Badge>
-              <Badge tono="B">{pareto.data.resumen.clase_b} B</Badge>
-              <Badge tono="C">{pareto.data.resumen.clase_c} C</Badge>
+        header={
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-ink text-sm font-semibold">
+                Pareto completo
+              </h2>
+              <p className="text-muted mt-1 text-xs leading-relaxed">
+                Todas las SKUs con merma en el rango; haz clic para ver eventos
+              </p>
             </div>
-          ) : undefined
+            <div className="shrink-0">
+              {pareto.data ? (
+                <div className="flex gap-1.5">
+                  <Tag
+                    value={`${pareto.data.resumen.clase_a} A`}
+                    severity="danger"
+                    className="tag-app"
+                  />
+                  <Tag
+                    value={`${pareto.data.resumen.clase_b} B`}
+                    severity="warning"
+                    className="tag-app"
+                  />
+                  <Tag
+                    value={`${pareto.data.resumen.clase_c} C`}
+                    className="tag-app tag-app-neutral"
+                  />
+                </div>
+              ) : undefined}
+            </div>
+          </div>
         }
       >
         {pareto.isPending ? (

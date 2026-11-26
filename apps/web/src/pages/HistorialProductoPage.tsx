@@ -6,9 +6,9 @@ import { Link, useParams } from "react-router-dom";
 import { ColdStartNotice } from "../components/feedback/ColdStartNotice";
 import { ErrorState } from "../components/feedback/ErrorState";
 import { PageHeader } from "../components/layout/PageHeader";
-import { Badge } from "../components/ui/Badge";
-import { Card } from "../components/ui/Card";
-import { Skeleton } from "../components/ui/Skeleton";
+import { Card } from "primereact/card";
+import { Tag } from "primereact/tag";
+import { Skeleton } from "primereact/skeleton";
 import {
   dateLabel,
   dateTimeLabel,
@@ -35,9 +35,9 @@ const CAMPOS_DIFF: { clave: ClaveDiff; etiqueta: string }[] = [
 ];
 
 const TONOS = {
-  crear: "cyan",
-  editar: "media",
-  eliminar: "alta",
+  crear: "info",
+  editar: "warning",
+  eliminar: "danger",
 } as const;
 
 function valorCampo(
@@ -66,7 +66,11 @@ function Cambio({ cambio }: { cambio: CambioHistorial }) {
     <li className="border-border bg-header/30 rounded-md border p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Badge tono={TONOS[cambio.accion]}>{cambio.accion}</Badge>
+          <Tag
+            value={cambio.accion}
+            severity={TONOS[cambio.accion]}
+            className="tag-app"
+          />
           <span className="text-muted font-mono text-[10px]">
             evento #{cambio.fact_id}
           </span>
@@ -158,7 +162,11 @@ export default function HistorialProductoPage() {
         }
         acciones={
           <>
-            <Badge tono="cyan">{integer(total)} cambios</Badge>
+            <Tag
+              value={`${integer(total)} cambios`}
+              severity="info"
+              className="tag-app"
+            />
             <Link
               to={`/registros?q=${codigoProducto}`}
               className="border-border text-ink hover:border-cyan/50 focus-visible:ring-cyan focus-visible:ring-offset-page inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
@@ -172,14 +180,25 @@ export default function HistorialProductoPage() {
       {historial.isPending && historial.failureCount > 0 && <ColdStartNotice />}
 
       <Card
-        title="Cambios registrados"
-        subtitle="De la más reciente a la más antigua. Los eventos cargados desde el Excel aparecen con su alta inicial."
-        action={
-          historial.data ? (
-            <span className="text-muted text-[11px]">
-              Página {page} de {Math.max(1, paginas)}
-            </span>
-          ) : undefined
+        header={
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-ink text-sm font-semibold">
+                Cambios registrados
+              </h2>
+              <p className="text-muted mt-1 text-xs leading-relaxed">
+                De la más reciente a la más antigua. Los eventos cargados desde
+                el Excel aparecen con su alta inicial.
+              </p>
+            </div>
+            <div className="shrink-0">
+              {historial.data ? (
+                <span className="text-muted text-[11px]">
+                  Página {page} de {Math.max(1, paginas)}
+                </span>
+              ) : undefined}
+            </div>
+          </div>
         }
       >
         {historial.isPending ? (

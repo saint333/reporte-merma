@@ -13,9 +13,9 @@ import { EmptyState } from "../components/feedback/EmptyState";
 import { ErrorState, mensajeDeError } from "../components/feedback/ErrorState";
 import { PageHeader } from "../components/layout/PageHeader";
 import { RegistrosTable } from "../components/tables/RegistrosTable";
-import { Badge } from "../components/ui/Badge";
-import { Card } from "../components/ui/Card";
-import { Skeleton } from "../components/ui/Skeleton";
+import { Card } from "primereact/card";
+import { Tag } from "primereact/tag";
+import { Skeleton } from "primereact/skeleton";
 import {
   descargarCsv,
   eliminarRegistro,
@@ -200,7 +200,11 @@ export default function RegistrosPage() {
         acciones={
           <>
             {registros.data && (
-              <Badge tono="cyan">{integer(total)} registros</Badge>
+              <Tag
+                value={`${integer(total)} registros`}
+                severity="info"
+                className="tag-app"
+              />
             )}
             <Button
               label="Agregar registro"
@@ -297,14 +301,20 @@ export default function RegistrosPage() {
       )}
 
       <Card
-        title="Detalle de movimientos"
-        action={
-          registros.data ? (
-            <span aria-live="polite" className="text-muted text-[11px]">
-              {integer(total)} registros · mostrando {integer(desde)}–
-              {integer(hasta)}
-            </span>
-          ) : undefined
+        header={
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-ink text-sm font-semibold">
+              Detalle de movimientos
+            </h2>
+            <div className="shrink-0">
+              {registros.data ? (
+                <span aria-live="polite" className="text-muted text-[11px]">
+                  {integer(total)} registros · mostrando {integer(desde)}–
+                  {integer(hasta)}
+                </span>
+              ) : undefined}
+            </div>
+          </div>
         }
       >
         {registros.isPending ? (

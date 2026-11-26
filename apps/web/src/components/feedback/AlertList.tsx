@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 
 import { money } from "../../lib/formatters";
 import type { Alerta, Filtros } from "../../lib/types";
-import { Badge } from "../ui/Badge";
-import { Skeleton } from "../ui/Skeleton";
+import { Skeleton } from "primereact/skeleton";
+import { Tag } from "primereact/tag";
 import { ColdStartNotice } from "./ColdStartNotice";
 import { EmptyState } from "./EmptyState";
 import { ErrorState } from "./ErrorState";
@@ -98,7 +98,21 @@ export function AlertList({
                 <p className="text-ink text-xs font-semibold">
                   {alerta.titulo}
                 </p>
-                <Badge tono={alerta.severidad}>{alerta.severidad}</Badge>
+                <Tag
+                  value={alerta.severidad}
+                  severity={
+                    alerta.severidad === "alta"
+                      ? "danger"
+                      : alerta.severidad === "media"
+                        ? "warning"
+                        : undefined
+                  }
+                  className={
+                    alerta.severidad === "baja"
+                      ? "tag-app tag-app-neutral"
+                      : "tag-app"
+                  }
+                />
               </div>
               <p className="text-muted mt-1 text-[11px] leading-relaxed">
                 {alerta.detalle}
