@@ -725,14 +725,38 @@ suite("API contra Postgres de prueba", () => {
 
     const cargas = await app.inject({ method: "GET", url: "/api/v1/cargas" });
     expect(cargas.json().data[0]).toMatchObject({
+      archivo: "api-test.xlsx",
+      estado: "completada",
+    });
+
+    const manual = await pool.query<{
+      archivo: string;
+      filas_leidas: number;
+      filas_insertadas: number;
+      filas_observadas: number;
+      desde: string;
+      hasta: string;
+      detalle: { modo?: string };
+    }>(
+      `select archivo, filas_leidas, filas_insertadas, filas_observadas,
+              desde::text as desde, hasta::text as hasta, detalle
+         from merma.carga
+        where archivo = 'Registro manual'
+        order by id desc
+        limit 1`,
+    );
+    expect(manual.rows[0]).toMatchObject({
       archivo: "Registro manual",
       filas_leidas: 1,
       filas_insertadas: 1,
+      filas_observadas: 0,
       desde: "2026-09-29",
       hasta: "2026-09-29",
-      modo: "manual",
-      estado: "completada",
+      detalle: { modo: "manual" },
     });
+
+    const meta = await app.inject({ method: "GET", url: "/api/v1/meta" });
+    expect(meta.json().data.ultima_carga.archivo).toBe("api-test.xlsx");
 
     const registros = await app.inject({
       method: "GET",
@@ -1235,6 +1259,26 @@ suite("API contra Postgres de prueba", () => {
       expect.objectContaining({ codigo: "MOTIVO_ALIAS" }),
     ]);
 
+    const cantidadAlias = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/registros/${alias.json().data.registro.id}`,
+      payload: { cantidad: "5", motivo: "ERROR DE IMPRESIÓN" },
+    });
+    expect(cantidadAlias.statusCode).toBe(200);
+
+    const historialAlias = await app.inject({
+      method: "GET",
+      url: `/api/v1/registros/${alias.json().data.registro.id}/historial`,
+    });
+    expect(historialAlias.json().data[0]).toMatchObject({
+      accion: "editar",
+      datos_nuevos: {
+        cantidad: "5.0000",
+        motivo: "ERROR DE IMPRESIÓN",
+        motivo_original: "MALA IMPRESIÓN",
+      },
+    });
+
     const atipica = await app.inject({
       method: "POST",
       url: "/api/v1/registros",
@@ -1272,6 +1316,9 @@ suite("API contra Postgres de prueba", () => {
     });
     expect(editado.statusCode).toBe(200);
     expect(editado.json().data.registro.motivo).toBe("ERROR DE IMPRESIÓN");
+    expect(editado.json().data.observaciones).toEqual([
+      expect.objectContaining({ codigo: "MOTIVO_ALIAS" }),
+    ]);
 
     const historial = await app.inject({
       method: "GET",

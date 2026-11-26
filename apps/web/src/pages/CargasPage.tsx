@@ -385,7 +385,7 @@ export default function CargasPage() {
 
       <Card
         title="Historial de cargas"
-        subtitle="Últimas 20 cargas registradas en la base, por fecha de ejecución"
+        subtitle="Últimas 20 cargas del Excel registradas, por fecha de ejecución"
       >
         {cargas.isPending ? (
           <div className="space-y-2">

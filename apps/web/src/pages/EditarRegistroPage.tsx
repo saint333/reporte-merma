@@ -21,7 +21,7 @@ import {
 } from "../lib/api";
 import { dateLabel, decimal, money4 } from "../lib/formatters";
 import { catalogosQuery, registroQuery, saludQuery } from "../lib/queries";
-import type { Registro } from "../lib/types";
+import type { Registro, RegistroEditado } from "../lib/types";
 
 function FormularioEdicion({ registro }: { registro: Registro }) {
   const queryClient = useQueryClient();
@@ -40,7 +40,7 @@ function FormularioEdicion({ registro }: { registro: Registro }) {
   const [error, setError] = useState<{ mensaje: string; codigo?: string } | null>(
     null,
   );
-  const [guardado, setGuardado] = useState<Registro | null>(null);
+  const [guardado, setGuardado] = useState<RegistroEditado | null>(null);
 
   function cambiar(parcial: Partial<ValoresRegistro>) {
     setValores((actual) => ({ ...actual, ...parcial }));
@@ -102,7 +102,8 @@ function FormularioEdicion({ registro }: { registro: Registro }) {
     }
   }
 
-  const codigoHistorial = guardado?.codigo_material ?? registro.codigo_material;
+  const codigoHistorial =
+    guardado?.registro.codigo_material ?? registro.codigo_material;
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -201,25 +202,43 @@ function FormularioEdicion({ registro }: { registro: Registro }) {
             <div className="grid grid-cols-2 gap-2">
               <Dato
                 etiqueta="Fecha"
-                valor={dateLabel(guardado.fecha)}
-                detalle={`Semana S${guardado.semana_iso}`}
+                valor={dateLabel(guardado.registro.fecha)}
+                detalle={`Semana S${guardado.registro.semana_iso}`}
               />
               <Dato
                 etiqueta="Costo"
-                valor={money4(guardado.costo_total)}
+                valor={money4(guardado.registro.costo_total)}
                 detalle="costo total"
               />
               <Dato
                 etiqueta="Material"
-                valor={String(guardado.codigo_material)}
-                detalle={guardado.descripcion}
+                valor={String(guardado.registro.codigo_material)}
+                detalle={guardado.registro.descripcion}
               />
               <Dato
                 etiqueta="Cantidad"
-                valor={`${decimal(guardado.cantidad, 4)} ${guardado.um}`}
-                detalle={guardado.motivo}
+                valor={`${decimal(guardado.registro.cantidad, 4)} ${guardado.registro.um}`}
+                detalle={guardado.registro.motivo}
               />
             </div>
+
+            {guardado.observaciones.length > 0 && (
+              <div className="border-amber/30 bg-amber/5 mt-3 rounded-md border p-3">
+                <p className="text-[10px] font-medium tracking-[0.12em] text-amber uppercase">
+                  Observaciones
+                </p>
+                <ul className="mt-1 space-y-1">
+                  {guardado.observaciones.map((observacion) => (
+                    <li
+                      key={observacion.codigo}
+                      className="text-[11px] text-amber"
+                    >
+                      {observacion.mensaje}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </Card>
         ) : (
           <Card title="Registro actual">

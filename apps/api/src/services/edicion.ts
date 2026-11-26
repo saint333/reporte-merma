@@ -4,7 +4,11 @@ import type { Pool } from "pg";
 import { costoTotal } from "../etl/dinero.js";
 import { semanaISO } from "../etl/fechas.js";
 import { hashFila } from "../etl/hash.js";
-import { normalizar, validarFila } from "../etl/reglas.js";
+import {
+  normalizar,
+  validarFila,
+  type Observacion,
+} from "../etl/reglas.js";
 import { ErrorApi } from "../http/errores.js";
 import {
   leerSnapshot,
@@ -22,6 +26,11 @@ export type EdicionRegistro = {
   codigoMaterial?: number;
   cantidad?: string;
   motivo?: string;
+};
+
+export type RegistroEditado = {
+  registro: FilaRegistro;
+  observaciones: Observacion[];
 };
 
 export async function obtenerRegistro(
@@ -46,7 +55,7 @@ export async function editarRegistro(
   pool: Pool,
   id: number,
   cambios: EdicionRegistro,
-): Promise<FilaRegistro> {
+): Promise<RegistroEditado> {
   const client = await pool.connect();
 
   try {
@@ -152,13 +161,19 @@ export async function editarRegistro(
 
     if (sinCambios) {
       await client.query("commit");
-      return await obtenerRegistro(pool, id);
+      return {
+        registro: await obtenerRegistro(pool, id),
+        observaciones: revision.observaciones,
+      };
     }
 
     const costo = costoTotal(cantidad, material.valor_unitario);
-    const motivoOriginal = cambios.motivo
-      ? motivoTexto
-      : (actual.motivo_original ?? motivo);
+    // Si el motivo resuelto no cambia, se conserva el texto original (por
+    // ejemplo, el alias que traía el Excel); si cambia, se guarda lo digitado.
+    const motivoOriginal =
+      motivo === actual.motivo
+        ? (actual.motivo_original ?? motivo)
+        : motivoTexto;
 
     await client.query(
       `update merma.fact_merma
@@ -202,7 +217,10 @@ export async function editarRegistro(
 
     await client.query("commit");
 
-    return await obtenerRegistro(pool, id);
+    return {
+      registro: await obtenerRegistro(pool, id),
+      observaciones: revision.observaciones,
+    };
   } catch (error) {
     await client.query("rollback").catch(() => undefined);
     throw error;

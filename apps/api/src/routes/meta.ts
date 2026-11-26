@@ -41,6 +41,7 @@ export function registrarMeta(app: FastifyInstance, pool: Pool): void {
               `select id::int as id, archivo, creada_en
                  from merma.carga
                 where estado = 'completada'
+                  and archivo <> 'Registro manual'
                 order by creada_en desc, id desc
                 limit 1`,
             ),

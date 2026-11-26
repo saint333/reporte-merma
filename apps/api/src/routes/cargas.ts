@@ -222,6 +222,7 @@ export function registrarCargas(
                 detalle ->> 'modo' as modo,
                 creada_en
            from merma.carga
+          where archivo <> 'Registro manual'
           order by creada_en desc, id desc
           limit $1`,
         [request.query.limite ?? 20],

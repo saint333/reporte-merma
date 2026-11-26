@@ -37,6 +37,7 @@ export function registrarSalud(
         `select creada_en
            from merma.carga
           where estado = 'completada'
+            and archivo <> 'Registro manual'
           order by creada_en desc, id desc
           limit 1`,
       );

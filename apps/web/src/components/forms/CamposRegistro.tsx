@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 
-import { CAMPANA_DESDE, hoyLima } from "../../lib/fechas";
 import { money4 } from "../../lib/formatters";
 import type { Catalogos, CatalogoMaterial } from "../../lib/types";
 import { CLASE_ETIQUETA, CLASE_INPUT } from "../ui/estilos";
@@ -46,7 +45,9 @@ export function CamposRegistro({
       (fila) => fila.codigo === Number(valores.codigoMaterial),
     ) ?? null;
   const motivoElegido =
-    catalogos.motivos.find((fila) => fila.codigo === valores.motivo) ?? null;
+    catalogos.motivos.find(
+      (fila) => fila.codigo === valores.motivo.trim().toUpperCase(),
+    ) ?? null;
 
   const numeroCantidad = Number(valores.cantidad);
   const costoEstimado =
@@ -66,12 +67,13 @@ export function CamposRegistro({
             type="date"
             required
             disabled={deshabilitado}
-            min={CAMPANA_DESDE}
-            max={hoyLima()}
             value={valores.fecha}
             onChange={(evento) => onCambio({ fecha: evento.target.value })}
             className={CLASE_INPUT}
           />
+          <p className="text-muted mt-1 text-[11px]">
+            Fuera de la campaña 2026 se guarda con una observación.
+          </p>
         </div>
 
         <div>
@@ -133,24 +135,37 @@ export function CamposRegistro({
           <label htmlFor="motivo" className={CLASE_ETIQUETA}>
             Motivo
           </label>
-          <select
+          <input
             id="motivo"
+            type="text"
             required
             disabled={deshabilitado}
+            list="motivos-disponibles"
+            autoComplete="off"
             value={valores.motivo}
             onChange={(evento) => onCambio({ motivo: evento.target.value })}
+            placeholder="Escribe o elige un motivo del catálogo"
             className={CLASE_INPUT}
-          >
-            <option value="">Selecciona un motivo…</option>
+          />
+          <datalist id="motivos-disponibles">
             {catalogos.motivos.map((fila) => (
               <option key={fila.codigo} value={fila.codigo}>
-                {fila.codigo} · {fila.gestionabilidad}
+                {fila.gestionabilidad}
               </option>
             ))}
-          </select>
-          {motivoElegido && (
+          </datalist>
+          {motivoElegido ? (
             <p className="text-muted mt-1 text-[11px]">
               {motivoElegido.categoria} · {motivoElegido.area_responsable}
+            </p>
+          ) : valores.motivo.trim() ? (
+            <p className="text-muted mt-1 text-[11px]">
+              Se resolverá por catálogo o alias; si no existe, se guardará como
+              SIN CLASIFICAR con una observación.
+            </p>
+          ) : (
+            <p className="text-muted mt-1 text-[11px]">
+              Elige un motivo del catálogo o escríbelo tal como llega.
             </p>
           )}
         </div>

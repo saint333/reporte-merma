@@ -188,6 +188,7 @@ export async function obtenerAlertas(
         select id::int as id, detalle->'motivos_alias' as aliases
         from merma.carga
         where estado = 'completada'
+          and archivo <> 'Registro manual'
         order by creada_en desc, id desc
         limit 1
         `,

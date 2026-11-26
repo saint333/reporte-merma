@@ -139,6 +139,8 @@ Content-Type: application/json
   "motivo": "ROTURA DE EMBALAJES"
 }
 
+### esperado: 200 · data.registro actualizado y data.observaciones si el evento las genera
+
 ### esperado: 200 · data.registro actualizado + snapshot antes/después en el historial
 ### 409 REGISTRO_DUPLICADO si la combinación ya existe
 ### si defines ADMIN_TOKEN en la API, agrega: x-admin-token: <token>

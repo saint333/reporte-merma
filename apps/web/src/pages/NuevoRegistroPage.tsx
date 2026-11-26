@@ -120,7 +120,7 @@ export default function NuevoRegistroPage() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Card
           title="Datos del evento"
-          subtitle="El material y el motivo salen del maestro y del catálogo vigentes; no se puede escribir un código libre."
+          subtitle="El material sale del maestro; el motivo se elige del catálogo o se escribe tal como llega, y se resuelve como en el Excel."
         >
           {catalogos.isPending ? (
             <div className="space-y-3">

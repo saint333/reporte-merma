@@ -551,7 +551,7 @@ export interface paths {
         head?: never;
         /**
          * Edita un evento de merma
-         * @description Actualiza los campos enviados, resuelve el motivo igual que el alta manual (catálogo, alias o SIN CLASIFICAR), recalcula semana ISO, valor unitario, costo total y hash con las reglas del ETL, y registra el antes/después en el historial. Solo pide x-admin-token si la API define ADMIN_TOKEN.
+         * @description Actualiza los campos enviados, resuelve el motivo igual que el alta manual (catálogo, alias o SIN CLASIFICAR), recalcula semana ISO, valor unitario, costo total y hash con las reglas del ETL, devuelve las observaciones y registra el antes/después en el historial. Solo pide x-admin-token si la API define ADMIN_TOKEN.
          */
         patch: {
             parameters: {

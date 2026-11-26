@@ -301,6 +301,11 @@ export type EdicionRegistroEntrada = {
   motivo?: string;
 };
 
+export type RegistroEditado = {
+  registro: Registro;
+  observaciones: ObservacionRegistro[];
+};
+
 export type HistorialProductoRespuesta = {
   data: CambioHistorial[];
   meta: ApiMeta & { material: CatalogoMaterial };

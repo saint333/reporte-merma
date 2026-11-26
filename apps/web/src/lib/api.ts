@@ -1,6 +1,6 @@
 import type {
   EdicionRegistroEntrada,
-  Registro,
+  RegistroEditado,
   RegistroManualCreado,
   RegistroManualEntrada,
   ReporteCarga,
@@ -145,16 +145,14 @@ export async function actualizarRegistro(
   entrada: EdicionRegistroEntrada,
   token = "",
   signal?: AbortSignal,
-): Promise<Registro> {
-  const data = await enviarJson<{ registro: Registro }>(
+): Promise<RegistroEditado> {
+  return enviarJson<RegistroEditado>(
     `/api/v1/registros/${id}`,
     "PATCH",
     entrada,
     token,
     signal,
   );
-
-  return data.registro;
 }
 
 export async function eliminarRegistro(

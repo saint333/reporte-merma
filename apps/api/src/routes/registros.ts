@@ -193,7 +193,7 @@ export function registrarRegistros(
         tags: ["Registros"],
         summary: "Edita un evento de merma",
         description:
-          "Actualiza los campos enviados, resuelve el motivo igual que el alta manual (catálogo, alias o SIN CLASIFICAR), recalcula semana ISO, valor unitario, costo total y hash con las reglas del ETL, y registra el antes/después en el historial. " +
+          "Actualiza los campos enviados, resuelve el motivo igual que el alta manual (catálogo, alias o SIN CLASIFICAR), recalcula semana ISO, valor unitario, costo total y hash con las reglas del ETL, devuelve las observaciones y registra el antes/después en el historial. " +
           "Solo pide x-admin-token si la API define ADMIN_TOKEN.",
         params: paramsId,
         body: {
@@ -208,7 +208,7 @@ export function registrarRegistros(
 
       const id = leerEnteroPositivo(request.params.id, "El id del registro");
       const entrada = parseEditarRegistro(request.body);
-      const registro = await editarRegistro(pool, id, {
+      const { registro, observaciones } = await editarRegistro(pool, id, {
         fecha: entrada.fecha,
         codigoMaterial: entrada.codigo_material,
         cantidad: entrada.cantidad,
@@ -218,7 +218,7 @@ export function registrarRegistros(
       app.cache.limpiar();
 
       request.log.info({ registro_id: id }, "registro editado");
-      return envelope({ registro });
+      return envelope({ registro, observaciones });
     },
   );
 
