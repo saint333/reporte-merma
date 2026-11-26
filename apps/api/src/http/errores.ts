@@ -72,7 +72,7 @@ export function registrarErrores(app: FastifyInstance): void {
         error: {
           codigo: "BASE_NO_DISPONIBLE",
           mensaje: "La base de datos no está disponible",
-          detalle: null,
+          detalle: { id_incidente: request.id },
         },
       });
     }
@@ -82,7 +82,7 @@ export function registrarErrores(app: FastifyInstance): void {
       error: {
         codigo: "ERROR_INTERNO",
         mensaje: "Error interno del servidor",
-        detalle: null,
+        detalle: { id_incidente: request.id },
       },
     });
   });
