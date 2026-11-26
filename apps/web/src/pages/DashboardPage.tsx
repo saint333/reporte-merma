@@ -19,7 +19,7 @@ import { ParetoTable } from "../components/tables/ParetoTable";
 import { SectionCard } from "../components/layout/SectionCard";
 import { Skeleton } from "primereact/skeleton";
 import { Tag } from "primereact/tag";
-import { dateLabel, integer, percent } from "../lib/formatters";
+import { dateLabel, integer, money, percent } from "../lib/formatters";
 import { useFiltros } from "../lib/filters";
 import {
   alertasQuery,
@@ -41,6 +41,9 @@ export default function DashboardPage() {
   const mensual = useQuery(serieMensualQuery(filtros));
   const semanal = useQuery(serieSemanalQuery(filtros));
   const motivos = useQuery(corteQuery("motivos", filtros));
+  const sinClasificar = motivos.data?.data.find(
+    (fila) => fila.clave === "SIN CLASIFICAR",
+  );
   const familias = useQuery(corteQuery("familias", filtros));
   const programas = useQuery(corteQuery("programas", filtros));
   const gestion = useQuery(corteQuery("gestion", filtros));
@@ -118,6 +121,17 @@ export default function DashboardPage() {
               }
             >
               {/* En xl, la lista no puede superar el alto del gráfico de la misma fila (300 px). */}
+              {sinClasificar && sinClasificar.eventos > 0 && (
+                <div className="border-border bg-header/40 mb-3 rounded-md border p-3">
+                  <p className="text-ink text-xs font-semibold">
+                    Pendientes de clasificar
+                  </p>
+                  <p className="text-muted mt-1 text-[11px]">
+                    {integer(sinClasificar.eventos)} eventos ·{" "}
+                    {money(sinClasificar.costo)} sin motivo del catálogo
+                  </p>
+                </div>
+              )}
               <div className="xl:max-h-[300px] xl:overflow-y-auto xl:pr-1">
                 <AlertList
                   alertas={alertas.data}
