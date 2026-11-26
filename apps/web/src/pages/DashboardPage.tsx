@@ -16,7 +16,7 @@ import { PageHeader } from "../components/layout/PageHeader";
 import { GestionMatrix } from "../components/tables/GestionMatrix";
 import { ParetoDrawer } from "../components/tables/ParetoDrawer";
 import { ParetoTable } from "../components/tables/ParetoTable";
-import { Card } from "primereact/card";
+import { SectionCard } from "../components/layout/SectionCard";
 import { Skeleton } from "primereact/skeleton";
 import { Tag } from "primereact/tag";
 import { dateLabel, integer, percent } from "../lib/formatters";
@@ -102,28 +102,18 @@ export default function DashboardPage() {
               )}
             </ChartCard>
 
-            <Card
+            <SectionCard
+              titulo="Alertas de calidad"
+              subtitulo="Prioriza lo que requiere acción esta semana"
               className="xl:col-span-4"
-              header={
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h2 className="text-ink text-sm font-semibold">
-                      Alertas de calidad
-                    </h2>
-                    <p className="text-muted mt-1 text-xs leading-relaxed">
-                      Prioriza lo que requiere acción esta semana
-                    </p>
-                  </div>
-                  <div className="shrink-0">
-                    {alertas.data ? (
-                      <Tag
-                        value={`${alertas.data.length} activas`}
-                        severity="warning"
-                        className="tag-app"
-                      />
-                    ) : undefined}
-                  </div>
-                </div>
+              accion={
+                alertas.data ? (
+                  <Tag
+                    value={`${alertas.data.length} activas`}
+                    severity="warning"
+                    className="tag-app"
+                  />
+                ) : undefined
               }
             >
               <AlertList
@@ -134,7 +124,7 @@ export default function DashboardPage() {
                 failureCount={alertas.failureCount}
                 onRetry={() => void alertas.refetch()}
               />
-            </Card>
+            </SectionCard>
           </div>
 
           <ChartCard
@@ -228,34 +218,24 @@ export default function DashboardPage() {
             </ChartCard>
           </div>
 
-          <Card
-            header={
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h2 className="text-ink text-sm font-semibold">
-                    Pareto de SKUs
-                  </h2>
-                  <p className="text-muted mt-1 text-xs leading-relaxed">
-                    Selecciona una fila para ver sus eventos
-                  </p>
+          <SectionCard
+            titulo="Pareto de SKUs"
+            subtitulo="Selecciona una fila para ver sus eventos"
+            accion={
+              pareto.data ? (
+                <div className="flex gap-1.5">
+                  <Tag
+                    value={`${pareto.data.resumen.skus} SKUs`}
+                    severity="info"
+                    className="tag-app"
+                  />
+                  <Tag
+                    value={`${pareto.data.resumen.clase_a} A`}
+                    severity="danger"
+                    className="tag-app"
+                  />
                 </div>
-                <div className="shrink-0">
-                  {pareto.data ? (
-                    <div className="flex gap-1.5">
-                      <Tag
-                        value={`${pareto.data.resumen.skus} SKUs`}
-                        severity="info"
-                        className="tag-app"
-                      />
-                      <Tag
-                        value={`${pareto.data.resumen.clase_a} A`}
-                        severity="danger"
-                        className="tag-app"
-                      />
-                    </div>
-                  ) : undefined}
-                </div>
-              </div>
+              ) : undefined
             }
           >
             {pareto.isPending ? (
@@ -292,11 +272,11 @@ export default function DashboardPage() {
                 />
               </>
             )}
-          </Card>
+          </SectionCard>
 
-          <Card
-            title="Matriz de gestionabilidad"
-            subTitle="Qué se puede controlar y qué decisión tomar"
+          <SectionCard
+            titulo="Matriz de gestionabilidad"
+            subtitulo="Qué se puede controlar y qué decisión tomar"
           >
             {gestion.isPending ? (
               <div className="space-y-2">
@@ -313,7 +293,7 @@ export default function DashboardPage() {
             ) : (
               <GestionMatrix filas={gestion.data?.data ?? []} />
             )}
-          </Card>
+          </SectionCard>
         </>
       )}
 

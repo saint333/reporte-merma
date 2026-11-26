@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { cx } from "../../lib/cx";
 import { Skeleton } from "primereact/skeleton";
+import { Tooltip } from "primereact/tooltip";
 
 type Tono = "cyan" | "orange" | "purple" | "green" | "amber" | "red";
 
@@ -30,6 +31,7 @@ export function KpiCard({
   tono = "cyan",
   cargando = false,
   icono,
+  tooltip,
 }: {
   etiqueta: string;
   valor: ReactNode;
@@ -37,7 +39,10 @@ export function KpiCard({
   tono?: Tono;
   cargando?: boolean;
   icono?: ReactNode;
+  tooltip?: string;
 }) {
+  const [iconoEl, setIconoEl] = useState<HTMLSpanElement | null>(null);
+
   return (
     <div
       className={cx(
@@ -49,7 +54,14 @@ export function KpiCard({
         <p className="text-muted text-[11px] font-medium tracking-[0.12em] uppercase">
           {etiqueta}
         </p>
-        {icono && <span className="text-muted/70">{icono}</span>}
+        {icono && (
+          <span ref={setIconoEl} className="text-muted/70">
+            {icono}
+          </span>
+        )}
+        {icono && tooltip && (
+          <Tooltip target={iconoEl ?? undefined} content={tooltip} position="top" />
+        )}
       </div>
 
       {cargando ? (

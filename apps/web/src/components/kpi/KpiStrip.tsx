@@ -44,6 +44,8 @@ export function KpiStrip({
         }
         tono="cyan"
         cargando={cargando}
+        icono={<i className="pi pi-dollar text-lg" />}
+        tooltip="Costo total de merma en el rango seleccionado"
       />
       <KpiCard
         etiqueta="Controlable"
@@ -53,6 +55,8 @@ export function KpiStrip({
         }
         tono="orange"
         cargando={cargando}
+        icono={<i className="pi pi-shield text-lg" />}
+        tooltip="Merma que el área puede controlar directamente"
       />
       <KpiCard
         etiqueta="Volumen"
@@ -66,6 +70,8 @@ export function KpiStrip({
         }
         tono="purple"
         cargando={cargando}
+        icono={<i className="pi pi-box text-lg" />}
+        tooltip="Equivalente en pallets de la merma del rango"
       />
       <KpiCard
         etiqueta="Cierre meta"
@@ -81,6 +87,8 @@ export function KpiStrip({
         }
         tono="green"
         cargando={cargando && !proyeccion}
+        icono={<i className="pi pi-flag text-lg" />}
+        tooltip="Costo proyectado si se cumple la meta de reducción"
       />
     </div>
   );
