@@ -65,14 +65,14 @@
 |---|---|---|
 | 0.1 | Pendiente (almacén) | – |
 | 0.2 | Pendiente (almacén) | – |
-| 1.1 | En curso | – |
-| 1.2 | Pendiente | – |
-| 1.3 | Pendiente | – |
-| 2.1 | Pendiente | – |
-| 2.2 | Pendiente | – |
-| 3.1 | Pendiente | – |
-| 3.2 | Pendiente | – |
-| 3.3 | Pendiente | – |
-| 4.1 | Pendiente | – |
-| 4.2 | Pendiente | – |
-| 4.3 | Pendiente | – |
+| 1.1 | Hecho | b208aa2 |
+| 1.2 | Hecho (orden por costo del mes, no por eventos: así lo entrega la API) | 15d0f0e |
+| 1.3 | Hecho | 4626150 |
+| 2.1 | Hecho sin cambio: el diálogo ya muestra cantidad, motivo y costo | – |
+| 2.2 | Hecho | 1f594c2 |
+| 3.1 | Hecho | 5820ec0 |
+| 3.2 | Hecho sin cambio: la API ya ofrece «Ver registros» en alertas de SIN CLASIFICAR | – |
+| 3.3 | Hecho | ac76a42 |
+| 4.1 | Hecho | 283aa4e |
+| 4.2 | Hecho sin cambio: las tablas ya usan dd/mm/aaaa | – |
+| 4.3 | Revisado sin cambio: no hay defecto verificado en registro ni eliminar | – |
