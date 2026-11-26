@@ -64,6 +64,32 @@ function sesionDesde(datos: z.infer<typeof esquema>): Config["sesion"] {
   };
 }
 
+function corsDesde(
+  valor: string,
+  appEnv: Config["appEnv"],
+): string[] {
+  const origenes = valor
+    .split(",")
+    .map((origen) => origen.trim())
+    .filter(Boolean);
+
+  if (appEnv !== "production") return origenes;
+
+  if (origenes.length === 0) {
+    throw new Error("Configuración inválida: CORS_ORIGINS es obligatoria en producción");
+  }
+
+  for (const origen of origenes) {
+    if (!origen.startsWith("https://") || /localhost|127\.0\.0\.1/.test(origen)) {
+      throw new Error(
+        `Configuración inválida: CORS_ORIGINS debe listar orígenes https:// públicos en producción (recibido: ${origen})`,
+      );
+    }
+  }
+
+  return origenes;
+}
+
 export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
   cargarEnv({ path: path.resolve(AQUI, "../.env") });
 
@@ -78,9 +104,7 @@ export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return {
     databaseUrl: resultado.data.DATABASE_URL,
     port: resultado.data.PORT,
-    corsOrigins: resultado.data.CORS_ORIGINS.split(",")
-      .map((origen) => origen.trim())
-      .filter(Boolean),
+    corsOrigins: corsDesde(resultado.data.CORS_ORIGINS, resultado.data.APP_ENV),
     appEnv: resultado.data.APP_ENV,
     cacheTtlSeconds: resultado.data.CACHE_TTL_SECONDS,
     rateLimitMax: resultado.data.RATE_LIMIT_MAX,
