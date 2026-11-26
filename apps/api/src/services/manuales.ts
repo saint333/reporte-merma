@@ -1,11 +1,16 @@
 import { createHash, randomUUID } from "node:crypto";
 
+import { Decimal } from "decimal.js";
 import type { Pool } from "pg";
 
 import { costoTotal } from "../etl/dinero.js";
 import { semanaISO } from "../etl/fechas.js";
 import { hashFila } from "../etl/hash.js";
-import { normalizar } from "../etl/reglas.js";
+import {
+  normalizar,
+  validarFila,
+  type Observacion,
+} from "../etl/reglas.js";
 import { ErrorApi } from "../http/errores.js";
 import { leerSnapshot, registrarCambio } from "./historial.js";
 import {
@@ -24,6 +29,7 @@ export type RegistroManualEntrada = {
 export type RegistroManualCreado = {
   carga_id: number;
   registro: FilaRegistro;
+  observaciones: Observacion[];
 };
 
 export async function crearRegistroManual(
@@ -31,7 +37,6 @@ export async function crearRegistroManual(
   entrada: RegistroManualEntrada,
 ): Promise<RegistroManualCreado> {
   const cantidadNormalizada = normalizarCantidad(entrada.cantidad);
-  const motivoCodigo = normalizar(entrada.motivo);
   const client = await pool.connect();
 
   try {
@@ -39,8 +44,10 @@ export async function crearRegistroManual(
 
     const { rows: materiales } = await client.query<{
       valor_unitario: string;
+      unidadesPorPallet: number;
     }>(
-      `select valor_unitario::text as valor_unitario
+      `select valor_unitario::text as valor_unitario,
+              unidades_por_pallet as "unidadesPorPallet"
          from merma.dim_material
         where codigo = $1 and activo`,
       [entrada.codigoMaterial],
@@ -56,19 +63,47 @@ export async function crearRegistroManual(
       );
     }
 
-    const { rows: motivos } = await client.query<{ codigo: string }>(
-      "select codigo from merma.dim_motivo where codigo = $1 and activo",
-      [motivoCodigo],
+    const [motivos, aliasFilas] = await Promise.all([
+      client.query<{ codigo: string }>(
+        "select codigo from merma.dim_motivo where activo",
+      ),
+      client.query<{ alias: string; motivo_codigo: string }>(
+        "select alias, motivo_codigo from merma.dim_motivo_alias",
+      ),
+    ]);
+
+    const catalogo = new Set(motivos.rows.map((fila) => fila.codigo));
+    const alias = new Map(
+      aliasFilas.rows.map((fila) => [
+        normalizar(fila.alias),
+        fila.motivo_codigo,
+      ]),
     );
 
-    if (!motivos[0]) {
+    // Mismas reglas que el ETL: catálogo, alias o SIN CLASIFICAR, con las
+    // observaciones de campaña, cantidad atípica y pallet singular.
+    const revision = validarFila({
+      fecha: entrada.fecha,
+      codigo: entrada.codigoMaterial,
+      cantidad: new Decimal(cantidadNormalizada),
+      motivoOriginal: entrada.motivo,
+      material,
+      catalogo,
+      alias,
+      esDuplicado: false,
+    });
+
+    if (revision.estado === "error" || !revision.motivoCodigo) {
+      const detalle = revision.observaciones[0];
       throw new ErrorApi(
-        "MOTIVO_NO_REGISTRADO",
-        `El motivo "${entrada.motivo}" no existe en el catálogo.`,
+        detalle?.codigo ?? "REGISTRO_INVALIDO",
+        detalle?.mensaje ?? "El registro no es válido.",
         null,
         422,
       );
     }
+
+    const motivoCodigo = revision.motivoCodigo;
 
     const hash = hashFila(
       entrada.fecha,
@@ -100,7 +135,7 @@ export async function crearRegistroManual(
       `insert into merma.carga
          (archivo, hash_archivo, filas_leidas, filas_insertadas, filas_observadas,
           desde, hasta, estado, detalle)
-       values ('Registro manual', $1, 1, 1, 0, $2, $2, 'completada', $3::jsonb)
+       values ('Registro manual', $1, 1, 1, $4, $2, $2, 'completada', $3::jsonb)
        returning id::int as id`,
       [
         hashArchivo,
@@ -111,7 +146,10 @@ export async function crearRegistroManual(
           codigo_material: entrada.codigoMaterial,
           cantidad: cantidadNormalizada,
           motivo: motivoCodigo,
+          motivo_original: entrada.motivo,
+          observaciones: revision.observaciones,
         }),
+        revision.estado === "observada" ? 1 : 0,
       ],
     );
 
@@ -123,7 +161,7 @@ export async function crearRegistroManual(
          (carga_id, fecha, semana_iso, mes, codigo_material, cantidad,
           motivo_codigo, motivo_original, valor_unitario, costo_total,
           origen_fila, hash_fila, es_duplicado)
-       values ($1, $2, $3, $4, $5, $6, $7, $7, $8, $9, null, $10, false)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, null, $11, false)
        returning id::int as id`,
       [
         carga.id,
@@ -133,6 +171,7 @@ export async function crearRegistroManual(
         entrada.codigoMaterial,
         cantidadNormalizada,
         motivoCodigo,
+        entrada.motivo,
         material.valor_unitario,
         costo,
         hash,
@@ -160,7 +199,11 @@ export async function crearRegistroManual(
 
     if (!registro) throw new Error("No se pudo leer el registro manual");
 
-    return { carga_id: carga.id, registro };
+    return {
+      carga_id: carga.id,
+      registro,
+      observaciones: revision.observaciones,
+    };
   } catch (error) {
     await client.query("rollback").catch(() => undefined);
     throw error;

@@ -4,7 +4,7 @@ import type { Pool } from "pg";
 import { costoTotal } from "../etl/dinero.js";
 import { semanaISO } from "../etl/fechas.js";
 import { hashFila } from "../etl/hash.js";
-import { normalizar } from "../etl/reglas.js";
+import { normalizar, validarFila } from "../etl/reglas.js";
 import { ErrorApi } from "../http/errores.js";
 import {
   leerSnapshot,
@@ -65,12 +65,15 @@ export async function editarRegistro(
     const fecha = cambios.fecha ?? actual.fecha;
     const codigo = cambios.codigoMaterial ?? actual.codigo_material;
     const cantidad = normalizarCantidad(cambios.cantidad ?? actual.cantidad);
-    const motivo = normalizar(cambios.motivo ?? actual.motivo);
+    const motivoTexto =
+      cambios.motivo ?? actual.motivo_original ?? actual.motivo;
 
     const { rows: materiales } = await client.query<{
       valor_unitario: string;
+      unidadesPorPallet: number;
     }>(
-      `select valor_unitario::text as valor_unitario
+      `select valor_unitario::text as valor_unitario,
+              unidades_por_pallet as "unidadesPorPallet"
          from merma.dim_material
         where codigo = $1 and activo`,
       [codigo],
@@ -86,20 +89,45 @@ export async function editarRegistro(
       );
     }
 
-    const { rows: motivos } = await client.query<{ codigo: string }>(
-      "select codigo from merma.dim_motivo where codigo = $1 and activo",
-      [motivo],
+    const [motivos, aliasFilas] = await Promise.all([
+      client.query<{ codigo: string }>(
+        "select codigo from merma.dim_motivo where activo",
+      ),
+      client.query<{ alias: string; motivo_codigo: string }>(
+        "select alias, motivo_codigo from merma.dim_motivo_alias",
+      ),
+    ]);
+
+    const catalogo = new Set(motivos.rows.map((fila) => fila.codigo));
+    const alias = new Map(
+      aliasFilas.rows.map((fila) => [
+        normalizar(fila.alias),
+        fila.motivo_codigo,
+      ]),
     );
 
-    if (!motivos[0]) {
+    const revision = validarFila({
+      fecha,
+      codigo,
+      cantidad: new Decimal(cantidad),
+      motivoOriginal: motivoTexto,
+      material,
+      catalogo,
+      alias,
+      esDuplicado: false,
+    });
+
+    if (revision.estado === "error" || !revision.motivoCodigo) {
+      const detalle = revision.observaciones[0];
       throw new ErrorApi(
-        "MOTIVO_NO_REGISTRADO",
-        `El motivo "${cambios.motivo ?? actual.motivo}" no existe en el catálogo.`,
+        detalle?.codigo ?? "REGISTRO_INVALIDO",
+        detalle?.mensaje ?? "El registro no es válido.",
         null,
         422,
       );
     }
 
+    const motivo = revision.motivoCodigo;
     const hash = hashFila(fecha, codigo, cantidad, motivo);
 
     const { rows: duplicados } = await client.query<{ id: number }>(
@@ -128,8 +156,9 @@ export async function editarRegistro(
     }
 
     const costo = costoTotal(cantidad, material.valor_unitario);
-    const motivoOriginal =
-      motivo === actual.motivo ? actual.motivo_original : motivo;
+    const motivoOriginal = cambios.motivo
+      ? motivoTexto
+      : (actual.motivo_original ?? motivo);
 
     await client.query(
       `update merma.fact_merma

@@ -239,9 +239,15 @@ export type RegistroManualEntrada = {
   motivo: string;
 };
 
+export type ObservacionRegistro = {
+  codigo: string;
+  mensaje: string;
+};
+
 export type RegistroManualCreado = {
   carga_id: number;
   registro: Registro;
+  observaciones: ObservacionRegistro[];
 };
 
 export type CargaHistorial = {

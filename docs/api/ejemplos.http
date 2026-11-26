@@ -121,7 +121,9 @@ Content-Type: application/json
   "motivo": "ROTURA DE EMBALAJES"
 }
 
-### esperado: 201 · data.registro con costo_total y carga_id
+### esperado: 201 · data.registro con costo_total, data.observaciones y carga_id
+### un motivo fuera del catálogo se guarda como SIN CLASIFICAR (MOTIVO_NO_CATALOGADO)
+### un alias como "MALA IMPRESIÓN" se resuelve a ERROR DE IMPRESIÓN (MOTIVO_ALIAS)
 ### 409 REGISTRO_DUPLICADO si ya existe fecha + material + cantidad + motivo
 ### si defines ADMIN_TOKEN en la API, agrega: x-admin-token: <token>
 

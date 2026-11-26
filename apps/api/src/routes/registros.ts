@@ -135,8 +135,8 @@ export function registrarRegistros(
         tags: ["Registros"],
         summary: "Registra manualmente un evento de merma",
         description:
-          "Valida el material y el motivo contra el catálogo, calcula la semana ISO, el valor unitario y el costo total con las mismas reglas del ETL, y deja una carga de auditoría con el evento. " +
-          "Solo pide la cabecera x-admin-token si la API define ADMIN_TOKEN.",
+          "Resuelve el motivo con el catálogo y los alias (o lo guarda como SIN CLASIFICAR), calcula la semana ISO, el valor unitario y el costo total con las mismas reglas del ETL, y devuelve las observaciones de campaña, cantidad atípica, motivo no catalogado o pallet singular. " +
+          "Deja una carga de auditoría con el evento. Solo pide la cabecera x-admin-token si la API define ADMIN_TOKEN.",
         body: {
           type: "object",
           additionalProperties: false,
@@ -193,7 +193,7 @@ export function registrarRegistros(
         tags: ["Registros"],
         summary: "Edita un evento de merma",
         description:
-          "Actualiza los campos enviados, recalcula semana ISO, valor unitario, costo total y hash con las reglas del ETL, y registra el antes/después en el historial. " +
+          "Actualiza los campos enviados, resuelve el motivo igual que el alta manual (catálogo, alias o SIN CLASIFICAR), recalcula semana ISO, valor unitario, costo total y hash con las reglas del ETL, y registra el antes/después en el historial. " +
           "Solo pide x-admin-token si la API define ADMIN_TOKEN.",
         params: paramsId,
         body: {

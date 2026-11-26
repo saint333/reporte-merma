@@ -741,7 +741,7 @@ suite("API contra Postgres de prueba", () => {
     expect(registros.json().page.total).toBe(5);
   });
 
-  it("POST /registros rechaza duplicados, catálogos inexistentes y cantidades inválidas", async () => {
+  it("POST /registros rechaza duplicados, materiales inexistentes y cuerpos inválidos", async () => {
     const duplicado = await app.inject({
       method: "POST",
       url: "/api/v1/registros",
@@ -768,18 +768,18 @@ suite("API contra Postgres de prueba", () => {
     expect(material.statusCode).toBe(422);
     expect(material.json().error.codigo).toBe("MATERIAL_NO_REGISTRADO");
 
-    const motivo = await app.inject({
+    const motivoVacio = await app.inject({
       method: "POST",
       url: "/api/v1/registros",
       payload: {
         fecha: "2026-09-30",
         codigo_material: 90000001,
         cantidad: "1",
-        motivo: "MOTIVO INVENTADO",
+        motivo: "   ",
       },
     });
-    expect(motivo.statusCode).toBe(422);
-    expect(motivo.json().error.codigo).toBe("MOTIVO_NO_REGISTRADO");
+    expect(motivoVacio.statusCode).toBe(422);
+    expect(motivoVacio.json().error.codigo).toBe("FILTRO_INVALIDO");
 
     const cantidad = await app.inject({
       method: "POST",
@@ -989,7 +989,7 @@ suite("API contra Postgres de prueba", () => {
     expect(historial.json().data[1].accion).toBe("crear");
   });
 
-  it("PATCH /registros/:id rechaza duplicados, catálogos inválidos y cuerpos vacíos", async () => {
+  it("PATCH /registros/:id rechaza duplicados, materiales inválidos y cuerpos vacíos", async () => {
     const lista = await app.inject({
       method: "GET",
       url: "/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&per_page=100",
@@ -1019,13 +1019,13 @@ suite("API contra Postgres de prueba", () => {
     expect(material.statusCode).toBe(422);
     expect(material.json().error.codigo).toBe("MATERIAL_NO_REGISTRADO");
 
-    const motivo = await app.inject({
+    const motivoVacio = await app.inject({
       method: "PATCH",
       url: `/api/v1/registros/${original.id}`,
-      payload: { motivo: "MOTIVO INVENTADO" },
+      payload: { motivo: "   " },
     });
-    expect(motivo.statusCode).toBe(422);
-    expect(motivo.json().error.codigo).toBe("MOTIVO_NO_REGISTRADO");
+    expect(motivoVacio.statusCode).toBe(422);
+    expect(motivoVacio.json().error.codigo).toBe("FILTRO_INVALIDO");
 
     const vacio = await app.inject({
       method: "PATCH",
@@ -1197,5 +1197,92 @@ suite("API contra Postgres de prueba", () => {
     expect(preflight.headers["access-control-allow-methods"]).toContain("DELETE");
 
     await appMutaciones.close();
+  });
+
+  it("resuelve motivos y observaciones igual que el ETL", async () => {
+    const desconocido = await app.inject({
+      method: "POST",
+      url: "/api/v1/registros",
+      payload: {
+        fecha: "2026-10-01",
+        codigo_material: 90000002,
+        cantidad: "3",
+        motivo: "MOTIVO INVENTADO",
+      },
+    });
+    expect(desconocido.statusCode).toBe(201);
+    expect(desconocido.json().data.registro).toMatchObject({
+      motivo: "SIN CLASIFICAR",
+      cantidad: "3.0000",
+    });
+    expect(desconocido.json().data.observaciones).toEqual([
+      expect.objectContaining({ codigo: "MOTIVO_NO_CATALOGADO" }),
+    ]);
+
+    const alias = await app.inject({
+      method: "POST",
+      url: "/api/v1/registros",
+      payload: {
+        fecha: "2026-10-02",
+        codigo_material: 90000002,
+        cantidad: "4",
+        motivo: "MALA IMPRESIÓN",
+      },
+    });
+    expect(alias.statusCode).toBe(201);
+    expect(alias.json().data.registro.motivo).toBe("ERROR DE IMPRESIÓN");
+    expect(alias.json().data.observaciones).toEqual([
+      expect.objectContaining({ codigo: "MOTIVO_ALIAS" }),
+    ]);
+
+    const atipica = await app.inject({
+      method: "POST",
+      url: "/api/v1/registros",
+      payload: {
+        fecha: "2026-10-03",
+        codigo_material: 90000002,
+        cantidad: "20000000",
+        motivo: "ROTURA DE EMBALAJES",
+      },
+    });
+    expect(atipica.statusCode).toBe(201);
+    expect(atipica.json().data.observaciones).toEqual([
+      expect.objectContaining({ codigo: "CANTIDAD_ATIPICA" }),
+    ]);
+
+    const fueraDeCampania = await app.inject({
+      method: "POST",
+      url: "/api/v1/registros",
+      payload: {
+        fecha: "2025-12-31",
+        codigo_material: 90000002,
+        cantidad: "1",
+        motivo: "ROTURA DE EMBALAJES",
+      },
+    });
+    expect(fueraDeCampania.statusCode).toBe(201);
+    expect(fueraDeCampania.json().data.observaciones).toEqual([
+      expect.objectContaining({ codigo: "FECHA_FUERA_DE_CAMPANIA" }),
+    ]);
+
+    const editado = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/registros/${desconocido.json().data.registro.id}`,
+      payload: { motivo: "MALA IMPRESIÓN" },
+    });
+    expect(editado.statusCode).toBe(200);
+    expect(editado.json().data.registro.motivo).toBe("ERROR DE IMPRESIÓN");
+
+    const historial = await app.inject({
+      method: "GET",
+      url: `/api/v1/registros/${desconocido.json().data.registro.id}/historial`,
+    });
+    expect(historial.json().data[0]).toMatchObject({
+      accion: "editar",
+      datos_nuevos: {
+        motivo: "ERROR DE IMPRESIÓN",
+        motivo_original: "MALA IMPRESIÓN",
+      },
+    });
   });
 });

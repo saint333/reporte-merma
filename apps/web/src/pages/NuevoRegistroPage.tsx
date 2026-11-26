@@ -225,6 +225,24 @@ export default function NuevoRegistroPage() {
                 />
               </div>
 
+              {creado.observaciones.length > 0 && (
+                <div className="border-amber/30 bg-amber/5 mt-3 rounded-md border p-3">
+                  <p className="text-[10px] font-medium tracking-[0.12em] text-amber uppercase">
+                    Observaciones
+                  </p>
+                  <ul className="mt-1 space-y-1">
+                    {creado.observaciones.map((observacion) => (
+                      <li
+                        key={observacion.codigo}
+                        className="text-[11px] text-amber"
+                      >
+                        {observacion.mensaje}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
@@ -251,6 +269,10 @@ export default function NuevoRegistroPage() {
                 <li>
                   El valor unitario se toma del maestro de materiales; no se
                   digita a mano.
+                </li>
+                <li>
+                  El motivo se resuelve igual que en el Excel: catálogo, alias o
+                  SIN CLASIFICAR. Las observaciones se muestran al guardar.
                 </li>
                 <li>
                   Cada alta queda en{" "}

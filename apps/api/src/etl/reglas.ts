@@ -72,7 +72,7 @@ export function validarFila(entrada: {
   codigo: number;
   cantidad: Decimal;
   motivoOriginal: string;
-  material: Material | undefined;
+  material: Pick<Material, "unidadesPorPallet"> | undefined;
   catalogo: Set<string>;
   alias: Map<string, string>;
   esDuplicado: boolean;
