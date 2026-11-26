@@ -6,6 +6,7 @@ import ExcelJS from "exceljs";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { hashFila } from "../src/etl/hash.js";
 import { ejecutar } from "../src/etl/load-xlsx.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
@@ -15,7 +16,15 @@ const nombreBase = databaseUrl
 const suite =
   databaseUrl && nombreBase.includes("test") ? describe : describe.skip;
 
-async function crearLibro(ruta: string): Promise<void> {
+type FilaLibro = { fecha: string; cantidad: number; motivo: string };
+
+async function crearLibro(
+  ruta: string,
+  filas: FilaLibro[] = [
+    { fecha: "2026-09-01", cantidad: 10, motivo: "ROTURA DE EMBALAJES" },
+    { fecha: "2026-09-02", cantidad: 4, motivo: "ROTURA DE EMBALAJES" },
+  ],
+): Promise<void> {
   const wb = new ExcelJS.Workbook();
 
   const catalogo = wb.addWorksheet("CATALOGO_MOTIVOS");
@@ -32,6 +41,12 @@ async function crearLibro(ruta: string): Promise<void> {
   fallback.getCell(3).value = "Supervisor de Turno";
   fallback.getCell(4).value = "Por Auditar";
   fallback.getCell(5).value = "Regularizar";
+  const impresion = catalogo.addRow([]);
+  impresion.getCell(1).value = "ERROR DE IMPRESIÓN";
+  impresion.getCell(2).value = "Operativa - Etiquetado";
+  impresion.getCell(3).value = "Codificación / Trazabilidad";
+  impresion.getCell(4).value = "Controlable";
+  impresion.getCell(5).value = "Verificación de etiqueta";
 
   const maestro = wb.addWorksheet("MAESTRO_MATERIALES");
   for (let i = 0; i < 4; i++) maestro.addRow([]);
@@ -47,15 +62,12 @@ async function crearLibro(ruta: string): Promise<void> {
 
   const registro = wb.addWorksheet("REGISTRO_MERMAS");
   for (let i = 0; i < 4; i++) registro.addRow([]);
-  for (const [fecha, cantidad] of [
-    ["2026-09-01", 10],
-    ["2026-09-02", 4],
-  ] as const) {
+  for (const { fecha, cantidad, motivo: texto } of filas) {
     const fila = registro.addRow([]);
     fila.getCell(4).value = new Date(`${fecha}T00:00:00Z`);
     fila.getCell(5).value = 13060001;
     fila.getCell(10).value = cantidad;
-    fila.getCell(12).value = "ROTURA DE EMBALAJES";
+    fila.getCell(12).value = texto;
   }
 
   await wb.xlsx.writeFile(ruta);
@@ -136,5 +148,43 @@ suite("ETL contra Postgres de prueba", () => {
       { accion: "crear", n: 4 },
       { accion: "eliminar", n: 2 },
     ]);
+  });
+
+  it("usa el motivo resuelto en el hash para no duplicar entre Excel y formulario", async () => {
+    await pool.query(
+      "truncate merma.fact_merma, merma.carga, merma.dim_material restart identity cascade",
+    );
+
+    const conAlias = path.join(dir, "alias.xlsx");
+    await crearLibro(conAlias, [
+      { fecha: "2026-09-01", cantidad: 10, motivo: "MALA IMPRESIÓN" },
+    ]);
+
+    const primero = await ejecutar({ ruta: conAlias }, "append", {
+      pool,
+      reportDir: dir,
+    });
+    expect(primero.insertadas).toBe(1);
+
+    const { rows } = await pool.query<{
+      hash_fila: string;
+      motivo_codigo: string;
+    }>("select hash_fila, motivo_codigo from merma.fact_merma");
+    expect(rows[0]?.motivo_codigo).toBe("ERROR DE IMPRESIÓN");
+    expect(rows[0]?.hash_fila).toBe(
+      hashFila("2026-09-01", 13060001, "10", "ERROR DE IMPRESIÓN"),
+    );
+
+    const conCodigo = path.join(dir, "codigo.xlsx");
+    await crearLibro(conCodigo, [
+      { fecha: "2026-09-01", cantidad: 10, motivo: "ERROR DE IMPRESIÓN" },
+    ]);
+
+    const segundo = await ejecutar({ ruta: conCodigo }, "append", {
+      pool,
+      reportDir: dir,
+    });
+    expect(segundo.insertadas).toBe(0);
+    expect(segundo.omitidas_por_existir).toBe(1);
   });
 });

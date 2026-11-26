@@ -12,6 +12,7 @@ import { hashArchivo, hashFila } from "./hash.js";
 import {
   GESTIONES,
   normalizar,
+  resolverMotivo,
   validarFila,
   type Material,
   type Motivo,
@@ -260,7 +261,16 @@ function leerRegistro(
 
     const motivoOriginal = celda(fila, 12);
     const material = materiales.get(codigo);
-    const hash = hashFila(fecha, codigo, cantidad.toFixed(4), motivoOriginal);
+    // El hash identifica el evento, no la forma de escribirlo: se calcula con
+    // el motivo resuelto del catálogo para que coincida con el alta manual y
+    // con los alias ya cargados.
+    const motivoResuelto = resolverMotivo(motivoOriginal, catalogo, alias);
+    const hash = hashFila(
+      fecha,
+      codigo,
+      cantidad.toFixed(4),
+      motivoResuelto.codigo,
+    );
     const esDuplicado = gruposHash.has(hash);
 
     const revision = validarFila({

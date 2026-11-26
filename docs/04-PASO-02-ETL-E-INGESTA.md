@@ -57,7 +57,7 @@ Si falla cualquier paso 2–6, **no se inserta nada**. Si falla el 7, rollback c
 | — | `mes` | `YYYY-MM` a partir de la fecha |
 | — | `valor_unitario` | snapshot del maestro, como texto decimal |
 | — | `costo_total` | `decimal.js`: producto normalizado a 15 dígitos y `ROUND_HALF_UP` a 4 decimales (así redondea Excel) |
-| — | `hash_fila` | `sha256(fecha|codigo|cantidad|motivo_original)` |
+| — | `hash_fila` | `sha256(fecha|codigo|cantidad|motivo_codigo)`; así el mismo evento tiene la misma identidad venga del Excel o del formulario (`motivo_original` queda solo para trazabilidad) |
 | — | `origen_fila` | número de fila del Excel |
 
 **Filas ignoradas:** 1–4 (títulos/cabecera), 1800 (`SUBTOTAL`), filas sin fecha.
