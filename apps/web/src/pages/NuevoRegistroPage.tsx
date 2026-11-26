@@ -17,12 +17,23 @@ import { Skeleton } from "primereact/skeleton";
 import { crearRegistroManual } from "../lib/api";
 import { hoyLima } from "../lib/fechas";
 import { dateLabel, decimal, money4 } from "../lib/formatters";
-import { catalogosQuery } from "../lib/queries";
+import { catalogosQuery, registrosQuery } from "../lib/queries";
 import type { RegistroManualCreado } from "../lib/types";
 
 export default function NuevoRegistroPage() {
   const queryClient = useQueryClient();
   const catalogos = useQuery(catalogosQuery);
+  const hoy = hoyLima();
+  const registrosHoy = useQuery(
+    registrosQuery({
+      desde: hoy,
+      hasta: hoy,
+      page: 1,
+      per_page: 5,
+      sort: "fecha",
+      order: "desc",
+    }),
+  );
 
   const [valores, setValores] = useState<ValoresRegistro>({
     fecha: hoyLima(),
@@ -214,6 +225,52 @@ export default function NuevoRegistroPage() {
               </div>
             </Card>
           ) : (
+            <>
+            <Card
+              title="Hoy"
+              subTitle={`Registros cargados el ${dateLabel(hoy)}`}
+            >
+              {registrosHoy.isPending ? (
+                <Skeleton className="h-20 w-full" />
+              ) : registrosHoy.error ? (
+                <ErrorState
+                  error={registrosHoy.error}
+                  onRetry={() => void registrosHoy.refetch()}
+                  compact
+                />
+              ) : registrosHoy.data.data.length === 0 ? (
+                <p className="text-muted text-[12px]">
+                  Aún no hay registros para hoy.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Dato
+                      etiqueta="Eventos"
+                      valor={String(registrosHoy.data.page.total)}
+                    />
+                    <Dato
+                      etiqueta="Últimos"
+                      valor={String(registrosHoy.data.data.length)}
+                      detalle="mostrados abajo"
+                    />
+                  </div>
+                  <ul className="space-y-1 text-[12px]">
+                    {registrosHoy.data.data.map((registro) => (
+                      <li
+                        key={registro.id}
+                        className="flex justify-between gap-2"
+                      >
+                        <span className="truncate">{registro.descripcion}</span>
+                        <span className="text-muted shrink-0">
+                          {money4(registro.costo_total)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </Card>
             <Card title="Qué se guarda">
               <ul className="text-muted space-y-2 text-[11px] leading-relaxed">
                 <li>
@@ -243,6 +300,7 @@ export default function NuevoRegistroPage() {
                 </li>
               </ul>
             </Card>
+            </>
           )}
         </div>
       </div>
