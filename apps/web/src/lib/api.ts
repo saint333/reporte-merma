@@ -75,24 +75,26 @@ function construirUrl(path: string, params: Parametros): string {
   return `${BASE}${path}${query ? `?${query}` : ""}`;
 }
 
-export async function getJson<T>(
-  path: string,
-  params: Parametros = {},
-  signal?: AbortSignal,
-): Promise<T> {
-  let respuesta: Response;
-
+async function peticion(url: string, init: RequestInit): Promise<Response> {
   try {
-    respuesta = await fetch(construirUrl(path, params), {
-      signal,
-      headers: { Accept: "application/json", ...cabeceraSesion() },
-    });
+    return await fetch(url, init);
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
       throw error;
     }
     throw new ApiError(0, null);
   }
+}
+
+export async function getJson<T>(
+  path: string,
+  params: Parametros = {},
+  signal?: AbortSignal,
+): Promise<T> {
+  const respuesta = await peticion(construirUrl(path, params), {
+    signal,
+    headers: { Accept: "application/json", ...cabeceraSesion() },
+  });
 
   if (!respuesta.ok) {
     revisarSesion(respuesta);
@@ -114,20 +116,12 @@ async function enviarJson<T>(
   const headers: Record<string, string> = { Accept: "application/json", ...cabeceraSesion() };
   if (cuerpo !== undefined) headers["content-type"] = "application/json";
 
-  let respuesta: Response;
-  try {
-    respuesta = await fetch(`${BASE}${path}`, {
-      method: metodo,
-      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
-      signal,
-      headers,
-    });
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw error;
-    }
-    throw new ApiError(0, null);
-  }
+  const respuesta = await peticion(`${BASE}${path}`, {
+    method: metodo,
+    body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+    signal,
+    headers,
+  });
 
   const payload = (await respuesta
     .json()
@@ -201,20 +195,12 @@ export async function subirCarga(
 
   const headers: Record<string, string> = { ...cabeceraSesion() };
 
-  let respuesta: Response;
-  try {
-    respuesta = await fetch(`${BASE}/api/v1/cargas?${query.toString()}`, {
-      method: "POST",
-      body: form,
-      signal,
-      headers,
-    });
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw error;
-    }
-    throw new ApiError(0, null);
-  }
+  const respuesta = await peticion(`${BASE}/api/v1/cargas?${query.toString()}`, {
+    method: "POST",
+    body: form,
+    signal,
+    headers,
+  });
 
   const payload = (await respuesta
     .json()
@@ -237,20 +223,12 @@ export async function crearRegistroManual(
     ...cabeceraSesion(),
   };
 
-  let respuesta: Response;
-  try {
-    respuesta = await fetch(`${BASE}/api/v1/registros`, {
-      method: "POST",
-      body: JSON.stringify(entrada),
-      signal,
-      headers,
-    });
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw error;
-    }
-    throw new ApiError(0, null);
-  }
+  const respuesta = await peticion(`${BASE}/api/v1/registros`, {
+    method: "POST",
+    body: JSON.stringify(entrada),
+    signal,
+    headers,
+  });
 
   const payload = (await respuesta
     .json()
