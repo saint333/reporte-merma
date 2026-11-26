@@ -15,5 +15,9 @@ export function crearPool(connectionString = process.env.DATABASE_URL): Pool {
     );
   }
 
-  return new Pool({ connectionString, max: 5 });
+  return new Pool({
+    connectionString,
+    max: 5,
+    statement_timeout: 10_000,
+  });
 }

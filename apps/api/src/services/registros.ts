@@ -180,6 +180,8 @@ export async function consultarRegistros(
   };
 }
 
+export const LIMITE_CSV = 50_000;
+
 export async function consultarRegistrosCsv(
   pool: Pool,
   query: RegistrosQuery,
@@ -209,9 +211,9 @@ export async function consultarRegistrosCsv(
     join merma.dim_motivo  mo on mo.codigo = r.motivo_codigo
     where ${filtro.sql}
     order by ${ORDEN[query.sort]} ${query.order}, r.id desc
-    limit 50000
+    limit ${LIMITE_CSV}
     `,
-    filtro.params,
+    [...filtro.params],
   );
 
   return rows;

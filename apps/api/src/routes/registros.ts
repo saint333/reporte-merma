@@ -22,6 +22,7 @@ import { crearRegistroManual } from "../services/manuales.js";
 import {
   consultarRegistros,
   consultarRegistrosCsv,
+  LIMITE_CSV,
   type FilaRegistro,
 } from "../services/registros.js";
 
@@ -283,6 +284,7 @@ export function registrarRegistros(
       return reply
         .type("text/csv; charset=utf-8")
         .header("content-disposition", 'attachment; filename="registros.csv"')
+        .header("x-csv-truncado", filas.length >= LIMITE_CSV ? "true" : "false")
         .send(aCsv(filas));
     },
   );
