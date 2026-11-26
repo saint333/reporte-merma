@@ -72,6 +72,9 @@ export default function CargasPage() {
   const [reporte, setReporte] = useState<ReporteCarga | null>(null);
   const formulario = useRef<HTMLFormElement>(null);
   const archivoRef = useRef<FileUpload>(null);
+  const cargaPrevia = archivo
+    ? (cargas.data ?? []).find((carga) => carga.archivo === archivo.name)
+    : undefined;
 
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -206,6 +209,12 @@ export default function CargasPage() {
                   <span className="text-amber">
                     Entiendo que se eliminan los eventos de la carga previa de
                     este archivo y se vuelven a insertar.
+                    {cargaPrevia && (
+                      <>
+                        {" "}Se eliminarán {integer(cargaPrevia.filas_insertadas)}{" "}
+                        filas de la carga del {dateTimeLabel(cargaPrevia.creada_en)}.
+                      </>
+                    )}
                   </span>
                 </label>
               )}
