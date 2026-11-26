@@ -20,6 +20,7 @@ import {
   eliminarRegistro,
 } from "../lib/api";
 import { dateLabel, decimal, integer, money4 } from "../lib/formatters";
+import { hoyLima } from "../lib/fechas";
 import { paramsFiltros, useFiltros } from "../lib/filters";
 import { registrosQuery } from "../lib/queries";
 import type { Registro } from "../lib/types";
@@ -31,6 +32,30 @@ type Order = "asc" | "desc";
 function leerSort(valor: string | null): Sort {
   return ORDENES.includes(valor as Sort) ? (valor as Sort) : "fecha";
 }
+
+function restarDias(iso: string, dias: number): string {
+  const fecha = new Date(`${iso}T00:00:00Z`);
+  fecha.setUTCDate(fecha.getUTCDate() - dias);
+  return fecha.toISOString().slice(0, 10);
+}
+
+const ATAJOS_FECHA = [
+  {
+    etiqueta: "Hoy",
+    desde: () => hoyLima(),
+    hasta: () => hoyLima(),
+  },
+  {
+    etiqueta: "Últimos 7 días",
+    desde: () => restarDias(hoyLima(), 6),
+    hasta: () => hoyLima(),
+  },
+  {
+    etiqueta: "Este mes",
+    desde: () => `${hoyLima().slice(0, 7)}-01`,
+    hasta: () => hoyLima(),
+  },
+];
 
 function leerPagina(valor: string | null): number {
   const numero = Number(valor);
@@ -91,6 +116,14 @@ export default function RegistrosPage() {
     const siguiente = new URLSearchParams(searchParams);
     if (valor) siguiente.set(clave, valor);
     else siguiente.delete(clave);
+    siguiente.delete("page");
+    setSearchParams(siguiente);
+  }
+
+  function aplicarRango(desdeFecha: string, hastaFecha: string) {
+    const siguiente = new URLSearchParams(searchParams);
+    siguiente.set("desde", desdeFecha);
+    siguiente.set("hasta", hastaFecha);
     siguiente.delete("page");
     setSearchParams(siguiente);
   }
@@ -272,6 +305,19 @@ export default function RegistrosPage() {
               />
             </label>
           </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {ATAJOS_FECHA.map((atajo) => (
+            <Button
+              key={atajo.etiqueta}
+              type="button"
+              label={atajo.etiqueta}
+              size="small"
+              outlined
+              severity="secondary"
+              onClick={() => aplicarRango(atajo.desde(), atajo.hasta())}
+            />
+          ))}
         </div>
         {errorCsv && (
           <Message severity="error" text={errorCsv} className="mt-2" />
