@@ -856,7 +856,7 @@ suite("API contra Postgres de prueba", () => {
       payload,
     });
     expect(sinToken.statusCode).toBe(401);
-    expect(sinToken.json().error.codigo).toBe("NO_AUTORIZADO");
+    expect(sinToken.json().error.codigo).toBe("SESION_REQUERIDA");
 
     const conToken = await appManual.inject({
       method: "POST",
@@ -891,7 +891,7 @@ suite("API contra Postgres de prueba", () => {
       url: "/api/v1/cargas",
     });
     expect(sinToken.statusCode).toBe(401);
-    expect(sinToken.json().error.codigo).toBe("NO_AUTORIZADO");
+    expect(sinToken.json().error.codigo).toBe("SESION_REQUERIDA");
 
     const tokenIncorrecto = await appCarga.inject({
       method: "POST",
@@ -1185,6 +1185,7 @@ suite("API contra Postgres de prueba", () => {
     const lista = await appMutaciones.inject({
       method: "GET",
       url: "/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&per_page=100",
+      headers: { authorization: `Bearer ${token}` },
     });
     const objetivo = lista
       .json()
@@ -1196,7 +1197,7 @@ suite("API contra Postgres de prueba", () => {
       payload: { cantidad: "55" },
     });
     expect(sinToken.statusCode).toBe(401);
-    expect(sinToken.json().error.codigo).toBe("NO_AUTORIZADO");
+    expect(sinToken.json().error.codigo).toBe("SESION_REQUERIDA");
 
     const borrarSinToken = await appMutaciones.inject({
       method: "DELETE",
