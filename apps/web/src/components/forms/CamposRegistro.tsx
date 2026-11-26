@@ -116,6 +116,7 @@ export function CamposRegistro({
           </label>
           <Calendar
             inputId="fecha"
+            aria-describedby="ayuda-fecha"
             value={aFecha(valores.fecha)}
             onChange={(evento) =>
               onCambio({
@@ -129,8 +130,7 @@ export function CamposRegistro({
             className="mt-1 w-full"
             inputClassName="w-full"
           />
-          <p className="text-muted mt-1 text-[11px]">
-            Fuera de la campaña 2026 se guarda con una observación.
+          <p id="ayuda-fecha" className="text-muted mt-1 text-[11px]"> se guarda con una observación.
           </p>
         </div>
 
@@ -140,6 +140,7 @@ export function CamposRegistro({
           </label>
           <InputNumber
             inputId="cantidad"
+            aria-describedby="ayuda-cantidad"
             value={cantidadNumero}
             onValueChange={(evento) =>
               onCambio({
@@ -156,7 +157,7 @@ export function CamposRegistro({
             className="mt-1 w-full"
             inputClassName="w-full"
           />
-          <p className="text-muted mt-1 text-[11px]">
+          <p id="ayuda-cantidad" className="text-muted mt-1 text-[11px]">
             {material
               ? `En ${material.um}`
               : "Selecciona el material para ver la unidad."}
@@ -169,6 +170,7 @@ export function CamposRegistro({
           </label>
           <Dropdown
             inputId="material"
+            aria-describedby="ayuda-material"
             value={valores.codigoMaterial}
             options={opcionesMaterial}
             optionGroupLabel="label"
@@ -185,8 +187,7 @@ export function CamposRegistro({
             className="mt-1 w-full"
           />
           {material && (
-            <p className="text-muted mt-1 text-[11px]">
-              {material.familia} · {material.programa} · valor unitario{" "}
+            <p id="ayuda-material" className="text-muted mt-1 text-[11px]"> · {material.programa} · valor unitario{" "}
               {money4(material.valor_unitario)}
             </p>
           )}
@@ -198,6 +199,7 @@ export function CamposRegistro({
           </label>
           <AutoComplete
             inputId="motivo"
+            aria-describedby="ayuda-motivo"
             value={valores.motivo}
             suggestions={sugerenciasMotivo}
             completeMethod={buscarMotivos}
@@ -215,16 +217,16 @@ export function CamposRegistro({
             inputClassName="w-full"
           />
           {motivoElegido ? (
-            <p className="text-muted mt-1 text-[11px]">
+            <p id="ayuda-motivo" className="text-muted mt-1 text-[11px]">
               {motivoElegido.categoria} · {motivoElegido.area_responsable}
             </p>
           ) : valores.motivo.trim() ? (
-            <p className="text-muted mt-1 text-[11px]">
+            <p id="ayuda-motivo" className="text-muted mt-1 text-[11px]">
               Se resolverá por catálogo o alias; si no existe, se guardará como
               SIN CLASIFICAR con una observación.
             </p>
           ) : (
-            <p className="text-muted mt-1 text-[11px]">
+            <p id="ayuda-motivo" className="text-muted mt-1 text-[11px]">
               Elige un motivo del catálogo o escríbelo tal como llega.
             </p>
           )}

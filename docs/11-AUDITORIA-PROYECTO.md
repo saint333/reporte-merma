@@ -93,17 +93,16 @@ Lo que está bien y no requiere cambios inmediatos:
 - **Propuesta:** añadir un paso `docker build apps/api` en CI.
 
 ### B3. Duplicación de lógica de fechas
-- Estado (verificado): siguen existiendo `apps/api/src/etl/fechas.ts` y `apps/api/src/http/fechas.ts`.
-- Hay `apps/api/src/etl/fechas.ts` y `apps/api/src/http/fechas.ts` con responsabilidades parecidas. Revisar si se pueden unificar sin cambiar comportamiento; el coste es bajo.
+- Estado (verificado): siguen existiendo `apps/api/src/etl/fechas.ts` y `apps/api/src/http/fechas.ts`, pero no son duplicados: uno parsea y calcula semana ISO; el otro trabaja con zona horaria de Lima. No se unifican para no cambiar comportamiento.
 
 ### B4. Duplicación de `fetch` en `api.ts`
 - `getJson`, `enviarJson`, `subirCarga`, `crearRegistroManual` y `descargarCsv` repiten el manejo de `AbortError`, `ApiError(0)` y el parseo de payload. Extraer una función `peticion()` común.
 
 ### B5. Accesibilidad de formularios
-- **Estado (verificado):** sigue igual. `components/forms/CamposRegistro.tsx` tiene 0 atributos `aria-*`. Revisar `aria-invalid`/`aria-describedby` para los errores de cada campo y verificar con lector de pantalla antes de cerrar.
+- **Estado (verificado):** cerrado en la rama de trabajo. Los campos de `components/forms/CamposRegistro.tsx` enlazan su texto de ayuda con `aria-describedby`, con un `id` por campo. Falta verificar con lector de pantalla.
 
 ### B6. Documentación con valores por defecto desfasados
-- `render.yaml` dice `UPLOAD_MAX_MB: 20`, coincide con el código. Revisar `docs/05-PASO-03-API-EN-RENDER.md` y `docs/operacion/despliegue.md` contra `config.ts` (p. ej. `RATE_LIMIT_MAX`, `CACHE_TTL_SECONDS`) porque no se contrastaron línea a línea.
+- Verificado: los valores por defecto de `docs/07` y `docs/operacion/despliegue.md` (`RATE_LIMIT_MAX` 600, `CACHE_TTL_SECONDS` 60, `UPLOAD_MAX_MB` 20) coinciden con `config.ts`. No hay desfase que corregir en esas cifras.
 
 ---
 
