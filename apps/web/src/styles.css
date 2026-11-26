@@ -45,6 +45,61 @@
   }
 }
 
+/* PrimeReact · alinea el tema con la paleta de la aplicación. */
+:root {
+  --primary-color: #22d3ee;
+  --primary-color-text: #071018;
+  --focus-ring: 0 0 0 0.2rem rgba(34, 211, 238, 0.35);
+  --font-family: "Segoe UI", "Inter", system-ui, sans-serif;
+  --text-color: #f8fafc;
+  --text-color-secondary: #94a3b8;
+  --surface-ground: #0d1526;
+  --surface-section: #111827;
+  --surface-card: #111827;
+  --surface-overlay: #162033;
+  --surface-border: #1e293b;
+  --surface-hover: #1e293b;
+  --surface-a: #111827;
+  --surface-b: #0d1526;
+  --surface-c: #1e293b;
+  --surface-d: #1e293b;
+  --surface-e: #111827;
+  --surface-f: #162033;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  background: var(--color-header);
+  color: var(--color-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  font-size: 12px;
+}
+
+.p-datatable .p-datatable-tbody > tr {
+  background: transparent;
+}
+
+.p-button {
+  font-size: 0.75rem;
+}
+
+.p-inputtext,
+.p-dropdown .p-dropdown-label,
+.p-dropdown .p-dropdown-item,
+.p-autocomplete .p-autocomplete-input,
+.p-autocomplete .p-autocomplete-item,
+.p-calendar .p-inputtext,
+.p-inputnumber .p-inputtext,
+.p-password .p-inputtext,
+.p-message .p-message-text {
+  font-size: 0.75rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

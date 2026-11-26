@@ -1,19 +1,26 @@
 import type { ReactNode } from "react";
+import { Tag } from "primereact/tag";
 
 import { cx } from "../../lib/cx";
 
 type Tono = "neutral" | "A" | "B" | "C" | "alta" | "media" | "baja" | "cyan";
 
-const TONOS: Record<Tono, string> = {
-  neutral: "bg-slate-500/15 text-slate-300 ring-1 ring-slate-500/25",
-  A: "bg-red-500/15 text-red-300 ring-1 ring-red-500/30",
-  B: "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/25",
-  C: "bg-slate-500/15 text-slate-300 ring-1 ring-slate-500/25",
-  alta: "bg-red-500/15 text-red-300 ring-1 ring-red-500/30",
-  media: "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/25",
-  baja: "bg-slate-500/15 text-slate-300 ring-1 ring-slate-500/25",
-  cyan: "bg-cyan-500/15 text-cyan-200 ring-1 ring-cyan-500/25",
+const SEVERIDAD: Record<
+  Tono,
+  "success" | "info" | "warning" | "danger" | undefined
+> = {
+  neutral: undefined,
+  A: "danger",
+  B: "warning",
+  C: undefined,
+  alta: "danger",
+  media: "warning",
+  baja: undefined,
+  cyan: "info",
 };
+
+const NEUTRAL =
+  "bg-slate-500/15! text-slate-300! ring-1! ring-slate-500/25!";
 
 export function Badge({
   children,
@@ -24,16 +31,18 @@ export function Badge({
   tono?: Tono;
   className?: string;
 }) {
+  const esNeutro = tono === "neutral" || tono === "C" || tono === "baja";
+
   return (
-    <span
+    <Tag
+      value={children}
+      severity={SEVERIDAD[tono]}
       className={cx(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide whitespace-nowrap",
-        TONOS[tono],
+        "rounded-full! px-2! py-0.5! text-[10px]! font-semibold!",
+        esNeutro ? NEUTRAL : undefined,
         className,
       )}
-    >
-      {children}
-    </span>
+    />
   );
 }
 

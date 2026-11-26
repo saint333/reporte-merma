@@ -1,4 +1,6 @@
 import { useIsFetching, useQuery } from "@tanstack/react-query";
+import { Button } from "primereact/button";
+import { Dropdown } from "primereact/dropdown";
 
 import { integer } from "../../lib/formatters";
 import { useFiltros } from "../../lib/filters";
@@ -22,19 +24,16 @@ function Selector({
       <span className="text-muted text-[10px] font-medium tracking-[0.12em] uppercase">
         {etiqueta}
       </span>
-      <select
+      <Dropdown
         value={valor}
-        onChange={(evento) => onChange(evento.target.value)}
+        options={opciones}
+        onChange={(evento) => onChange(evento.value ?? "")}
         disabled={deshabilitado}
-        className="border-border bg-surface text-ink focus-visible:ring-cyan focus-visible:ring-offset-page w-full rounded-md border px-2.5 py-1.5 text-xs focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-50"
-      >
-        <option value="">Todos</option>
-        {opciones.map((opcion) => (
-          <option key={opcion} value={opcion}>
-            {opcion}
-          </option>
-        ))}
-      </select>
+        placeholder="Todos"
+        showClear
+        aria-label={etiqueta}
+        className="w-full"
+      />
     </label>
   );
 }
@@ -91,26 +90,29 @@ export function FilterBar() {
                 ? `${integer(kpis.data.eventos)} eventos`
                 : "Datos al día"}
           </span>
-          <button
+          <Button
             type="button"
-            onClick={limpiar}
+            label="Limpiar filtros"
+            icon="pi pi-filter-slash"
+            size="small"
+            outlined
+            severity="secondary"
             disabled={!hayFiltros}
-            className="border-border text-muted hover:text-ink hover:border-cyan/40 focus-visible:ring-cyan focus-visible:ring-offset-page rounded-md border px-2.5 py-1.5 text-[11px] font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Limpiar filtros
-          </button>
+            onClick={limpiar}
+          />
         </div>
       </div>
       {meta.isError && (
         <p className="mt-2 text-[11px] text-amber-200">
           No se pudieron cargar las opciones de filtro.{" "}
-          <button
+          <Button
             type="button"
+            label="Reintentar"
+            text
+            size="small"
+            className="p-0! text-[11px]!"
             onClick={() => void meta.refetch()}
-            className="underline underline-offset-4"
-          >
-            Reintentar
-          </button>
+          />
         </p>
       )}
     </div>

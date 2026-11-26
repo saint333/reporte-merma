@@ -1,5 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "primereact/button";
+import { Message } from "primereact/message";
+import { Password } from "primereact/password";
 import { Link } from "react-router-dom";
 
 import { ColdStartNotice } from "../components/feedback/ColdStartNotice";
@@ -12,7 +15,7 @@ import { PageHeader } from "../components/layout/PageHeader";
 import { Badge } from "../components/ui/Badge";
 import { Card } from "../components/ui/Card";
 import { Dato } from "../components/ui/Dato";
-import { CLASE_ETIQUETA, CLASE_INPUT } from "../components/ui/estilos";
+import { CLASE_ETIQUETA } from "../components/ui/estilos";
 import { Skeleton } from "../components/ui/Skeleton";
 import {
   crearRegistroManual,
@@ -148,14 +151,15 @@ export default function NuevoRegistroPage() {
                   <label htmlFor="token" className={CLASE_ETIQUETA}>
                     Clave de administración
                   </label>
-                  <input
-                    id="token"
-                    type="password"
-                    autoComplete="off"
+                  <Password
+                    inputId="token"
                     value={token}
                     onChange={(evento) => setToken(evento.target.value)}
                     placeholder="ADMIN_TOKEN de la API"
-                    className={CLASE_INPUT}
+                    feedback={false}
+                    toggleMask
+                    className="mt-1 w-full"
+                    inputClassName="w-full"
                   />
                   <p className="text-muted mt-1 text-[11px]">
                     Se guarda solo en esta pestaña (sessionStorage); nunca viaja
@@ -165,28 +169,30 @@ export default function NuevoRegistroPage() {
               )}
 
               {error && (
-                <div
-                  role="alert"
-                  className="border-red/30 bg-red/5 mt-4 rounded-md border p-3"
-                >
-                  <p className="text-[12px] font-medium text-red-300">
-                    {error.mensaje}
-                  </p>
-                  {error.codigo && (
-                    <p className="text-muted mt-1 font-mono text-[10px]">
-                      {error.codigo}
-                    </p>
-                  )}
-                </div>
+                <Message
+                  severity="error"
+                  className="mt-4"
+                  content={
+                    <>
+                      <p className="text-[12px] font-medium">{error.mensaje}</p>
+                      {error.codigo && (
+                        <p className="mt-1 font-mono text-[10px] opacity-80">
+                          {error.codigo}
+                        </p>
+                      )}
+                    </>
+                  }
+                />
               )}
 
-              <button
+              <Button
                 type="submit"
+                label={enviando ? "Guardando registro…" : "Guardar registro"}
+                icon="pi pi-save"
+                loading={enviando}
                 disabled={enviando || catalogos.isPending}
-                className="bg-cyan focus-visible:ring-cyan focus-visible:ring-offset-page mt-4 rounded-md px-4 py-2 text-xs font-bold text-slate-900 transition hover:bg-cyan/90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {enviando ? "Guardando registro…" : "Guardar registro"}
-              </button>
+                className="mt-4"
+              />
               {enviando && (
                 <p className="text-muted mt-2 text-[11px]">
                   Validando contra el catálogo y escribiendo en Postgres.
@@ -226,31 +232,27 @@ export default function NuevoRegistroPage() {
               </div>
 
               {creado.observaciones.length > 0 && (
-                <div className="border-amber/30 bg-amber/5 mt-3 rounded-md border p-3">
-                  <p className="text-[10px] font-medium tracking-[0.12em] text-amber uppercase">
-                    Observaciones
-                  </p>
-                  <ul className="mt-1 space-y-1">
-                    {creado.observaciones.map((observacion) => (
-                      <li
-                        key={observacion.codigo}
-                        className="text-[11px] text-amber"
-                      >
-                        {observacion.mensaje}
-                      </li>
-                    ))}
-                  </ul>
+                <div className="mt-3 space-y-2">
+                  {creado.observaciones.map((observacion) => (
+                    <Message
+                      key={observacion.codigo}
+                      severity="warn"
+                      text={observacion.mensaje}
+                    />
+                  ))}
                 </div>
               )}
 
               <div className="mt-4 flex flex-wrap items-center gap-3">
-                <button
+                <Button
                   type="button"
+                  label="Registrar otro"
+                  icon="pi pi-plus"
+                  severity="secondary"
+                  outlined
+                  size="small"
                   onClick={() => setCreado(null)}
-                  className="border-border text-ink hover:border-cyan/50 focus-visible:ring-cyan focus-visible:ring-offset-page rounded-md border px-3 py-1.5 text-[11px] font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                >
-                  Registrar otro
-                </button>
+                />
                 <Link
                   to="/registros"
                   className="text-cyan text-xs font-semibold underline underline-offset-4"

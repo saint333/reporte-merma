@@ -1,14 +1,23 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { AutoComplete } from "primereact/autocomplete";
+import { Calendar } from "primereact/calendar";
+import { Dropdown } from "primereact/dropdown";
+import { InputNumber } from "primereact/inputnumber";
 
 import { money4 } from "../../lib/formatters";
 import type { Catalogos, CatalogoMaterial } from "../../lib/types";
-import { CLASE_ETIQUETA, CLASE_INPUT } from "../ui/estilos";
+import { CLASE_ETIQUETA } from "../ui/estilos";
 
 export type ValoresRegistro = {
   fecha: string;
   codigoMaterial: string;
   cantidad: string;
   motivo: string;
+};
+
+type GrupoMaterial = {
+  label: string;
+  items: { label: string; value: string }[];
 };
 
 function agruparPorFamilia(
@@ -25,6 +34,25 @@ function agruparPorFamilia(
   return [...grupos.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
+function aFecha(iso: string): Date | null {
+  if (!iso) return null;
+
+  const [anio = 0, mes = 0, dia = 0] = iso.split("-").map(Number);
+  if (!anio || !mes || !dia) return null;
+
+  return new Date(anio, mes - 1, dia);
+}
+
+function aISO(fecha: Date | null): string {
+  if (!fecha) return "";
+
+  const anio = fecha.getFullYear();
+  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+  const dia = String(fecha.getDate()).padStart(2, "0");
+
+  return `${anio}-${mes}-${dia}`;
+}
+
 export function CamposRegistro({
   catalogos,
   valores,
@@ -36,10 +64,20 @@ export function CamposRegistro({
   onCambio: (parcial: Partial<ValoresRegistro>) => void;
   deshabilitado?: boolean;
 }) {
-  const grupos = useMemo(
-    () => agruparPorFamilia(catalogos.materiales),
+  const [sugerenciasMotivo, setSugerenciasMotivo] = useState<string[]>([]);
+
+  const opcionesMaterial = useMemo<GrupoMaterial[]>(
+    () =>
+      agruparPorFamilia(catalogos.materiales).map(([familia, materiales]) => ({
+        label: familia,
+        items: materiales.map((fila) => ({
+          label: `${fila.codigo} · ${fila.descripcion}`,
+          value: String(fila.codigo),
+        })),
+      })),
     [catalogos.materiales],
   );
+
   const material =
     catalogos.materiales.find(
       (fila) => fila.codigo === Number(valores.codigoMaterial),
@@ -49,11 +87,25 @@ export function CamposRegistro({
       (fila) => fila.codigo === valores.motivo.trim().toUpperCase(),
     ) ?? null;
 
-  const numeroCantidad = Number(valores.cantidad);
-  const costoEstimado =
-    material && Number.isFinite(numeroCantidad) && numeroCantidad > 0
-      ? (numeroCantidad * Number(material.valor_unitario)).toFixed(4)
+  const cantidadNumero =
+    valores.cantidad.trim() && Number.isFinite(Number(valores.cantidad))
+      ? Number(valores.cantidad)
       : null;
+  const costoEstimado =
+    material && cantidadNumero !== null && cantidadNumero > 0
+      ? (cantidadNumero * Number(material.valor_unitario)).toFixed(4)
+      : null;
+
+  function buscarMotivos(evento: { query: string }) {
+    const consulta = evento.query.trim().toUpperCase();
+
+    setSugerenciasMotivo(
+      catalogos.motivos
+        .map((fila) => fila.codigo)
+        .filter((codigo) => !consulta || codigo.includes(consulta))
+        .slice(0, 12),
+    );
+  }
 
   return (
     <>
@@ -62,14 +114,20 @@ export function CamposRegistro({
           <label htmlFor="fecha" className={CLASE_ETIQUETA}>
             Fecha
           </label>
-          <input
-            id="fecha"
-            type="date"
-            required
+          <Calendar
+            inputId="fecha"
+            value={aFecha(valores.fecha)}
+            onChange={(evento) =>
+              onCambio({
+                fecha: aISO((evento.value as Date | null) ?? null),
+              })
+            }
+            dateFormat="dd/mm/yy"
+            showIcon
             disabled={deshabilitado}
-            value={valores.fecha}
-            onChange={(evento) => onCambio({ fecha: evento.target.value })}
-            className={CLASE_INPUT}
+            placeholder="dd/mm/aaaa"
+            className="mt-1 w-full"
+            inputClassName="w-full"
           />
           <p className="text-muted mt-1 text-[11px]">
             Fuera de la campaña 2026 se guarda con una observación.
@@ -80,18 +138,23 @@ export function CamposRegistro({
           <label htmlFor="cantidad" className={CLASE_ETIQUETA}>
             Cantidad
           </label>
-          <input
-            id="cantidad"
-            type="number"
-            required
+          <InputNumber
+            inputId="cantidad"
+            value={cantidadNumero}
+            onValueChange={(evento) =>
+              onCambio({
+                cantidad: evento.value !== null ? String(evento.value) : "",
+              })
+            }
+            mode="decimal"
+            min={0.0001}
+            step={0.0001}
+            maxFractionDigits={4}
+            useGrouping={false}
             disabled={deshabilitado}
-            inputMode="decimal"
-            min="0.0001"
-            step="0.0001"
-            value={valores.cantidad}
-            onChange={(evento) => onCambio({ cantidad: evento.target.value })}
             placeholder="0.0000"
-            className={CLASE_INPUT}
+            className="mt-1 w-full"
+            inputClassName="w-full"
           />
           <p className="text-muted mt-1 text-[11px]">
             {material
@@ -104,25 +167,23 @@ export function CamposRegistro({
           <label htmlFor="material" className={CLASE_ETIQUETA}>
             Material
           </label>
-          <select
-            id="material"
-            required
-            disabled={deshabilitado}
+          <Dropdown
+            inputId="material"
             value={valores.codigoMaterial}
-            onChange={(evento) => onCambio({ codigoMaterial: evento.target.value })}
-            className={CLASE_INPUT}
-          >
-            <option value="">Selecciona un material…</option>
-            {grupos.map(([familia, materiales]) => (
-              <optgroup key={familia} label={familia}>
-                {materiales.map((fila) => (
-                  <option key={fila.codigo} value={fila.codigo}>
-                    {fila.codigo} · {fila.descripcion}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+            options={opcionesMaterial}
+            optionGroupLabel="label"
+            optionGroupChildren="items"
+            optionLabel="label"
+            optionValue="value"
+            onChange={(evento) =>
+              onCambio({ codigoMaterial: evento.value ?? "" })
+            }
+            filter
+            showClear
+            disabled={deshabilitado}
+            placeholder="Selecciona un material…"
+            className="mt-1 w-full"
+          />
           {material && (
             <p className="text-muted mt-1 text-[11px]">
               {material.familia} · {material.programa} · valor unitario{" "}
@@ -135,25 +196,24 @@ export function CamposRegistro({
           <label htmlFor="motivo" className={CLASE_ETIQUETA}>
             Motivo
           </label>
-          <input
-            id="motivo"
-            type="text"
-            required
-            disabled={deshabilitado}
-            list="motivos-disponibles"
-            autoComplete="off"
+          <AutoComplete
+            inputId="motivo"
             value={valores.motivo}
-            onChange={(evento) => onCambio({ motivo: evento.target.value })}
+            suggestions={sugerenciasMotivo}
+            completeMethod={buscarMotivos}
+            onChange={(evento) =>
+              onCambio({
+                motivo: typeof evento.value === "string" ? evento.value : "",
+              })
+            }
+            onFocus={() => buscarMotivos({ query: "" })}
+            dropdown
+            forceSelection={false}
+            disabled={deshabilitado}
             placeholder="Escribe o elige un motivo del catálogo"
-            className={CLASE_INPUT}
+            className="mt-1 w-full"
+            inputClassName="w-full"
           />
-          <datalist id="motivos-disponibles">
-            {catalogos.motivos.map((fila) => (
-              <option key={fila.codigo} value={fila.codigo}>
-                {fila.gestionabilidad}
-              </option>
-            ))}
-          </datalist>
           {motivoElegido ? (
             <p className="text-muted mt-1 text-[11px]">
               {motivoElegido.categoria} · {motivoElegido.area_responsable}

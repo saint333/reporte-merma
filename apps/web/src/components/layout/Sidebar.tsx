@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "primereact/button";
 import { NavLink } from "react-router-dom";
 
 import { cx } from "../../lib/cx";
@@ -104,14 +105,16 @@ export function Sidebar({
             </p>
           </div>
 
-          <button
+          <Button
             type="button"
-            onClick={onCerrar}
+            icon="pi pi-times"
+            text
+            rounded
+            severity="secondary"
             aria-label="Cerrar menú"
-            className="text-muted hover:bg-white/5 hover:text-ink focus-visible:ring-cyan grid size-8 shrink-0 place-items-center rounded-md transition focus-visible:ring-2 focus-visible:outline-none lg:hidden"
-          >
-            <Icono nombre="cerrar" className="size-4" />
-          </button>
+            onClick={onCerrar}
+            className="lg:hidden!"
+          />
         </div>
 
         <nav

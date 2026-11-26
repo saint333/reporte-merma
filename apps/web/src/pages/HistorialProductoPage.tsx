@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "primereact/button";
 import { Link, useParams } from "react-router-dom";
 
 import { ColdStartNotice } from "../components/feedback/ColdStartNotice";
@@ -211,22 +212,27 @@ export default function HistorialProductoPage() {
               {integer(total)} cambios registrados
             </p>
             <div className="flex gap-2">
-              <button
+              <Button
                 type="button"
-                onClick={() => setPage((actual) => Math.max(1, actual - 1))}
+                label="Anterior"
+                icon="pi pi-chevron-left"
+                size="small"
+                outlined
+                severity="secondary"
                 disabled={page <= 1}
-                className="border-border text-ink hover:border-cyan/50 focus-visible:ring-cyan focus-visible:ring-offset-page rounded-md border px-2.5 py-1.5 text-[11px] font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Anterior
-              </button>
-              <button
+                onClick={() => setPage((actual) => Math.max(1, actual - 1))}
+              />
+              <Button
                 type="button"
-                onClick={() => setPage((actual) => actual + 1)}
+                label="Siguiente"
+                icon="pi pi-chevron-right"
+                iconPos="right"
+                size="small"
+                outlined
+                severity="secondary"
                 disabled={page >= paginas}
-                className="border-border text-ink hover:border-cyan/50 focus-visible:ring-cyan focus-visible:ring-offset-page rounded-md border px-2.5 py-1.5 text-[11px] font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Siguiente
-              </button>
+                onClick={() => setPage((actual) => actual + 1)}
+              />
             </div>
           </div>
         )}

@@ -1,5 +1,17 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "primereact/button";
+import { Column } from "primereact/column";
+import { DataTable } from "primereact/datatable";
+import {
+  FileUpload,
+  type FileUploadSelectEvent,
+} from "primereact/fileupload";
+import { Checkbox } from "primereact/checkbox";
+import { Message } from "primereact/message";
+import { Password } from "primereact/password";
+import { RadioButton } from "primereact/radiobutton";
+import { Tag } from "primereact/tag";
 import { Link } from "react-router-dom";
 
 import { ColdStartNotice } from "../components/feedback/ColdStartNotice";
@@ -11,7 +23,7 @@ import { Skeleton } from "../components/ui/Skeleton";
 import { guardarTokenAdmin, leerTokenAdmin, subirCarga } from "../lib/api";
 import { dateLabel, dateTimeLabel, integer, money } from "../lib/formatters";
 import { cargasQuery, saludQuery } from "../lib/queries";
-import type { ReporteCarga } from "../lib/types";
+import type { CargaHistorial, ReporteCarga } from "../lib/types";
 
 type Modo = "append" | "replace";
 
@@ -36,22 +48,16 @@ function Dato({
 }
 
 function EstadoCarga({ estado }: { estado: string }) {
-  const clase =
+  const severidad =
     estado === "completada"
-      ? "bg-green/10 text-green ring-green/25"
+      ? "success"
       : estado === "fallida"
-        ? "bg-red/10 text-red ring-red/25"
+        ? "danger"
         : estado === "revertida"
-          ? "bg-amber/10 text-amber ring-amber/25"
-          : "bg-cyan/10 text-cyan ring-cyan/25";
+          ? "warning"
+          : "info";
 
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase ring-1 ${clase}`}
-    >
-      {estado}
-    </span>
-  );
+  return <Tag value={estado} severity={severidad} />;
 }
 
 export default function CargasPage() {
@@ -70,6 +76,7 @@ export default function CargasPage() {
   );
   const [reporte, setReporte] = useState<ReporteCarga | null>(null);
   const formulario = useRef<HTMLFormElement>(null);
+  const archivoRef = useRef<FileUpload>(null);
 
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -105,6 +112,7 @@ export default function CargasPage() {
       setArchivo(null);
       setConfirmo(false);
       formulario.current?.reset();
+      archivoRef.current?.clear();
       await queryClient.invalidateQueries();
     } catch (fallo) {
       setError(mensajeDeError(fallo));
@@ -134,22 +142,29 @@ export default function CargasPage() {
           <form ref={formulario} onSubmit={(evento) => void enviar(evento)}>
             <div className="space-y-4">
               <div>
-                <label
-                  htmlFor="archivo"
-                  className="text-muted text-[10px] font-medium tracking-[0.12em] uppercase"
-                >
+                <span className="text-muted text-[10px] font-medium tracking-[0.12em] uppercase">
                   Archivo
-                </label>
-                <input
-                  id="archivo"
-                  type="file"
+                </span>
+                <FileUpload
+                  ref={archivoRef}
+                  mode="basic"
+                  auto={false}
                   accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                  onChange={(evento) => {
-                    setArchivo(evento.target.files?.[0] ?? null);
+                  maxFileSize={20 * 1024 * 1024}
+                  chooseLabel="Seleccionar Excel"
+                  chooseOptions={{ icon: "pi pi-file-excel" }}
+                  invalidFileSizeMessageSummary="Archivo demasiado grande"
+                  invalidFileSizeMessageDetail="El máximo es 20 MB."
+                  onSelect={(evento: FileUploadSelectEvent) => {
+                    setArchivo(evento.files[0] ?? null);
                     setReporte(null);
                     setError(null);
                   }}
-                  className="border-border bg-header text-ink focus-visible:ring-cyan focus-visible:ring-offset-page mt-1 w-full cursor-pointer rounded-md border px-3 py-2 text-xs file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-cyan/10 file:px-3 file:py-1.5 file:text-[11px] file:font-semibold file:text-cyan focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                  onClear={() => {
+                    setArchivo(null);
+                    setReporte(null);
+                  }}
+                  className="mt-1"
                 />
                 <p className="text-muted mt-1 text-[11px]">
                   {archivo
@@ -163,14 +178,13 @@ export default function CargasPage() {
                   Modo
                 </legend>
                 <div className="mt-1 grid gap-2 sm:grid-cols-2">
-                  <label className="border-border bg-header/40 has-[:checked]:border-cyan/50 has-[:checked]:bg-cyan/5 flex cursor-pointer items-start gap-2 rounded-md border p-2.5">
-                    <input
-                      type="radio"
+                  <label className="border-border bg-header/40 has-checked:border-cyan/50 has-checked:bg-cyan/5 flex cursor-pointer items-start gap-2 rounded-md border p-2.5">
+                    <RadioButton
+                      inputId="modo-append"
                       name="modo"
                       value="append"
                       checked={modo === "append"}
                       onChange={() => setModo("append")}
-                      className="accent-cyan mt-0.5"
                     />
                     <span>
                       <span className="text-ink block text-xs font-semibold">
@@ -181,14 +195,13 @@ export default function CargasPage() {
                       </span>
                     </span>
                   </label>
-                  <label className="border-border bg-header/40 has-[:checked]:border-cyan/50 has-[:checked]:bg-cyan/5 flex cursor-pointer items-start gap-2 rounded-md border p-2.5">
-                    <input
-                      type="radio"
+                  <label className="border-border bg-header/40 has-checked:border-cyan/50 has-checked:bg-cyan/5 flex cursor-pointer items-start gap-2 rounded-md border p-2.5">
+                    <RadioButton
+                      inputId="modo-replace"
                       name="modo"
                       value="replace"
                       checked={modo === "replace"}
                       onChange={() => setModo("replace")}
-                      className="accent-cyan mt-0.5"
                     />
                     <span>
                       <span className="text-ink block text-xs font-semibold">
@@ -204,11 +217,10 @@ export default function CargasPage() {
 
               {modo === "replace" && (
                 <label className="border-amber/30 bg-amber/5 flex items-start gap-2 rounded-md border p-2.5 text-[11px]">
-                  <input
-                    type="checkbox"
+                  <Checkbox
+                    inputId="confirmo"
                     checked={confirmo}
-                    onChange={(evento) => setConfirmo(evento.target.checked)}
-                    className="accent-amber mt-0.5"
+                    onChange={(evento) => setConfirmo(Boolean(evento.checked))}
                   />
                   <span className="text-amber">
                     Entiendo que se eliminan los eventos de la carga previa de
@@ -225,14 +237,15 @@ export default function CargasPage() {
                   >
                     Clave de administración
                   </label>
-                  <input
-                    id="token"
-                    type="password"
-                    autoComplete="off"
+                  <Password
+                    inputId="token"
                     value={token}
                     onChange={(evento) => setToken(evento.target.value)}
                     placeholder="ADMIN_TOKEN de la API"
-                    className="border-border bg-header text-ink placeholder:text-muted/70 focus-visible:ring-cyan focus-visible:ring-offset-page mt-1 w-full rounded-md border px-3 py-2 text-xs focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    feedback={false}
+                    toggleMask
+                    className="mt-1 w-full"
+                    inputClassName="w-full"
                   />
                   <p className="text-muted mt-1 text-[11px]">
                     Esta API tiene ADMIN_TOKEN definido. Se guarda solo en esta
@@ -242,28 +255,28 @@ export default function CargasPage() {
               )}
 
               {error && (
-                <div
-                  role="alert"
-                  className="border-red/30 bg-red/5 rounded-md border p-3"
-                >
-                  <p className="text-[12px] font-medium text-red-300">
-                    {error.mensaje}
-                  </p>
-                  {error.codigo && (
-                    <p className="text-muted mt-1 font-mono text-[10px]">
-                      {error.codigo}
-                    </p>
-                  )}
-                </div>
+                <Message
+                  severity="error"
+                  content={
+                    <>
+                      <p className="text-[12px] font-medium">{error.mensaje}</p>
+                      {error.codigo && (
+                        <p className="mt-1 font-mono text-[10px] opacity-80">
+                          {error.codigo}
+                        </p>
+                      )}
+                    </>
+                  }
+                />
               )}
 
-              <button
+              <Button
                 type="submit"
+                label={enviando ? "Procesando archivo…" : "Cargar datos"}
+                icon="pi pi-cloud-upload"
+                loading={enviando}
                 disabled={enviando}
-                className="bg-cyan focus-visible:ring-cyan focus-visible:ring-offset-page rounded-md px-4 py-2 text-xs font-bold text-slate-900 transition hover:bg-cyan/90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {enviando ? "Procesando archivo…" : "Cargar datos"}
-              </button>
+              />
               {enviando && (
                 <p className="text-muted text-[11px]">
                   Validando y escribiendo en Postgres. En el plan free de Render
@@ -399,57 +412,60 @@ export default function CargasPage() {
             onRetry={() => void cargas.refetch()}
             compact
           />
-        ) : !cargas.data?.length ? (
-          <p className="text-muted text-xs">
-            Todavía no hay cargas registradas. Sube el primer archivo con el
-            formulario de arriba.
-          </p>
         ) : (
-          <div className="border-border overflow-x-auto rounded-md border">
-            <table className="w-full min-w-[720px] text-left text-[11px]">
-              <thead>
-                <tr className="bg-header/80 text-muted border-border border-b text-[10px] tracking-[0.08em] uppercase">
-                  <th className="px-3 py-2.5 font-medium">Fecha</th>
-                  <th className="px-3 py-2.5 font-medium">Archivo</th>
-                  <th className="px-3 py-2.5 font-medium">Modo</th>
-                  <th className="px-3 py-2.5 text-right font-medium">Insertadas</th>
-                  <th className="px-3 py-2.5 text-right font-medium">Costo</th>
-                  <th className="px-3 py-2.5 font-medium">Rango</th>
-                  <th className="px-3 py-2.5 font-medium">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cargas.data.map((carga) => (
-                  <tr
-                    key={carga.id}
-                    className="border-border/60 hover:bg-header/40 border-b transition-colors last:border-0"
-                  >
-                    <td className="text-ink px-3 py-2.5 whitespace-nowrap">
-                      {dateTimeLabel(carga.creada_en)}
-                    </td>
-                    <td className="text-muted max-w-[220px] truncate px-3 py-2.5">
-                      {carga.archivo}
-                    </td>
-                    <td className="text-muted px-3 py-2.5">{carga.modo ?? "—"}</td>
-                    <td className="text-ink px-3 py-2.5 text-right">
-                      {integer(carga.filas_insertadas)}
-                    </td>
-                    <td className="text-ink px-3 py-2.5 text-right whitespace-nowrap">
-                      {money(carga.costo_total ?? "0")}
-                    </td>
-                    <td className="text-muted px-3 py-2.5 whitespace-nowrap">
-                      {carga.desde && carga.hasta
-                        ? `${dateLabel(carga.desde)} – ${dateLabel(carga.hasta)}`
-                        : "—"}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <EstadoCarga estado={carga.estado} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            value={cargas.data ?? []}
+            dataKey="id"
+            size="small"
+            stripedRows
+            scrollable
+            className="text-xs"
+            emptyMessage="Todavía no hay cargas del Excel registradas."
+          >
+            <Column
+              header="Fecha"
+              body={(carga: CargaHistorial) => dateTimeLabel(carga.creada_en)}
+              style={{ minWidth: "9rem" }}
+            />
+            <Column
+              header="Archivo"
+              body={(carga: CargaHistorial) => (
+                <span className="block max-w-55 truncate">
+                  {carga.archivo}
+                </span>
+              )}
+              style={{ minWidth: "12rem" }}
+            />
+            <Column
+              header="Modo"
+              body={(carga: CargaHistorial) => carga.modo ?? "—"}
+            />
+            <Column
+              header="Insertadas"
+              body={(carga: CargaHistorial) => integer(carga.filas_insertadas)}
+              align="right"
+            />
+            <Column
+              header="Costo"
+              body={(carga: CargaHistorial) => money(carga.costo_total ?? "0")}
+              align="right"
+            />
+            <Column
+              header="Rango"
+              body={(carga: CargaHistorial) =>
+                carga.desde && carga.hasta
+                  ? `${dateLabel(carga.desde)} – ${dateLabel(carga.hasta)}`
+                  : "—"
+              }
+              style={{ minWidth: "12rem" }}
+            />
+            <Column
+              header="Estado"
+              body={(carga: CargaHistorial) => (
+                <EstadoCarga estado={carga.estado} />
+              )}
+            />
+          </DataTable>
         )}
       </Card>
     </div>

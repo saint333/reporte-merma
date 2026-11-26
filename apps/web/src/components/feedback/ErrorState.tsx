@@ -1,3 +1,5 @@
+import { Button } from "primereact/button";
+
 import { ApiError } from "../../lib/api";
 
 export function mensajeDeError(error: unknown): {
@@ -44,13 +46,16 @@ export function ErrorState({
         <p className="text-muted mt-1 font-mono text-[11px]">{codigo}</p>
       )}
       {onRetry && (
-        <button
+        <Button
           type="button"
+          label="Reintentar"
+          icon="pi pi-refresh"
+          size="small"
+          outlined
+          severity="secondary"
+          className="mt-3"
           onClick={onRetry}
-          className="border-border bg-surface text-ink hover:border-cyan/50 focus-visible:ring-cyan focus-visible:ring-offset-page mt-3 rounded-md border px-3 py-1.5 text-xs font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-        >
-          Reintentar
-        </button>
+        />
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "primereact/button";
 
 import { dateLabel, money } from "../../lib/formatters";
 import { registrosSkuQuery } from "../../lib/queries";
@@ -61,14 +62,16 @@ export function ParetoDrawer({
               {fila.familia} · {fila.programa} · {fila.eventos} eventos
             </p>
           </div>
-          <button
+          <Button
             type="button"
-            onClick={onClose}
+            label="Cerrar"
+            icon="pi pi-times"
+            size="small"
+            outlined
+            severity="secondary"
             aria-label="Cerrar detalle"
-            className="border-border text-muted hover:text-ink focus-visible:ring-cyan focus-visible:ring-offset-surface rounded-md border px-2 py-1 text-xs focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-          >
-            Cerrar
-          </button>
+            onClick={onClose}
+          />
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
