@@ -84,6 +84,15 @@ jobs:
           npm test
           npm run build
 
+  docker-api:
+    name: Construir la imagen de la API
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Construir la imagen (sin publicarla)
+        run: docker build -t merma-api:ci apps/api
+
   desplegar-api:
     name: Migrar Neon y desplegar la API
     needs: pruebas
