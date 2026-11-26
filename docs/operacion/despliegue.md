@@ -24,7 +24,9 @@ El primer despliegue se completa en los paneles de Neon, Render y Netlify. A par
 | `TZ` | `America/Lima` | No | `render.yaml` |
 | `CACHE_TTL_SECONDS` | `60` | No | `render.yaml` |
 | `RATE_LIMIT_MAX` | `600` | No | `render.yaml` |
-| `ADMIN_TOKEN` | vacío (carga sin clave) | Opcional | panel de Render |
+| `ADMIN_USER` | sin valor | **Sí** (en producción) | panel de Render |
+| `ADMIN_PASSWORD_HASH` | sin valor | **Sí** (en producción) | panel de Render |
+| `SESSION_SECRET` | sin valor | **Sí** (en producción) | panel de Render |
 | `UPLOAD_MAX_MB` | `20` | No | `render.yaml` |
 
 `PORT` lo inyecta Render y no se define a mano. `CORS_ORIGINS` acepta varios orígenes separados por coma, sin barra final:
@@ -132,9 +134,9 @@ Comprobación por HTTP contra las URLs reales (sin navegador):
 | `GET /alertas` | 7 sin motivo por `$1,118.13`, 4 duplicados, `MALA IMPRESIÓN` (3), S40 al 31.0% |
 | `GET /registros.csv` | `text/csv`, `attachment`, 1,618 filas + cabecera, tildes conservadas, separador coma y decimal con punto |
 | CORS `GET /salud` desde `https://reporte-merma.netlify.app` | `access-control-allow-origin` con ese origen, sin `*` |
-| Preflight `OPTIONS /cargas` | `204`, `allow-methods: GET, POST, OPTIONS`, `allow-headers: content-type, x-admin-token, x-request-id` |
+| Preflight `OPTIONS /cargas` | `204`, `allow-methods: GET, POST, OPTIONS`, `allow-headers: content-type, authorization, x-request-id` |
 | Cabeceras de Netlify | `X-Robots-Tag: noindex, nofollow`, `X-Frame-Options: DENY`, HSTS con `preload` |
-| `POST /cargas` sin cabecera y sin archivo | `400 ARCHIVO_REQUERIDO`: no exige clave |
+| `POST /cargas` sin sesión y sin archivo | `401 NO_AUTORIZADO`: exige login |
 | `POST /cargas?modo=append` con el Excel real, sin cabecera | `200`, `ya_cargado: true`, `insertadas: 0`, 1,795 leídas (08/05–23/11), `costo_total 20383.7525` |
 | `GET /cargas` | historial con la carga `completada` de 1,795 filas; la subida repetida no crea registro porque no escribe nada |
 | Workflow `CI/CD` en el push de `main` | `Pruebas y build` y `Migrar Neon y desplegar la API` en success |
@@ -172,15 +174,15 @@ y sincronizar el Blueprint de Render si cambia `render.yaml`.
 La ruta **Cargas** de la SPA envía el `.xlsx` a `POST /api/v1/cargas` y la API ejecuta el mismo ETL que la CLI, sin acceso al sistema de archivos.
 
 1. Abrir `https://<sitio>.netlify.app/cargas`.
-2. Elegir el archivo y el modo. La clave solo se pide si definiste `ADMIN_TOKEN` en Render:
+2. Elegir el archivo y el modo. La pantalla exige sesión iniciada:
    - **Agregar** (`append`): inserta filas nuevas y omite las que ya existen por hash.
    - **Reemplazar** (`replace`): revierte la carga previa del mismo archivo y la reinserta. Exige marcar la confirmación.
 3. Revisar el resumen: insertadas, omitidas, errores, rango y costo total.
 
 Reglas del endpoint:
 
-- **No pide clave por defecto.** Si defines `ADMIN_TOKEN` (mínimo 16 caracteres) en Render, exige la cabecera `x-admin-token` y el formulario muestra el campo. `GET /api/v1/salud` publica `carga_requiere_token` para que la web sepa si mostrarlo.
-- Sin `ADMIN_TOKEN`, cualquiera que conozca la URL del sitio puede subir un archivo y, en modo `replace`, reemplazar los hechos de la carga anterior de ese mismo archivo. Define el token si el sitio deja de ser privado.
+- **Exige sesión.** La SPA no deja entrar sin login y toda escritura manda el token de sesión en `Authorization: Bearer <token>`. `GET /api/v1/salud` publica `carga_requiere_token` con ese mismo estado.
+- En producción la API no arranca sin `ADMIN_USER`, `ADMIN_PASSWORD_HASH` y `SESSION_SECRET`, así que no hay modo abierto por descuido. La sesión dura 8 horas y se guarda en `sessionStorage`.
 - Límite de 20 MB (`UPLOAD_MAX_MB`), solo `.xlsx`, y 6 cargas por minuto por IP.
 - El archivo se procesa en memoria y la carga queda registrada en `merma.carga` con su hash.
 - Al terminar, la API invalida la caché de KPIs, series, cortes, Pareto y alertas.

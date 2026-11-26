@@ -7,12 +7,14 @@ import { exigirAutorizacion } from "../http/autorizacion.js";
 import { ErrorApi, esErrorDeBase } from "../http/errores.js";
 import { isoLima } from "../http/fechas.js";
 import { envelope } from "../http/respuesta.js";
+import { extraerBearer } from "./sesion.js";
 
 const MODOS = new Set<Modo>(["append", "replace"]);
+
 const EXTENSION = /\.xlsx$/i;
 
 export type OpcionesCargas = {
-  adminToken: string | null;
+  sesion?: { secreto: string } | null;
   maxBytes: number;
 };
 
@@ -93,7 +95,7 @@ export function registrarCargas(
         summary: "Carga el Excel de mermas desde el navegador",
         description:
           "Recibe el archivo en multipart/form-data (campo archivo) y ejecuta el mismo ETL que la CLI. " +
-          "Solo pide la cabecera x-admin-token si la API define ADMIN_TOKEN. El modo replace borra los hechos de la carga previa del mismo archivo.",
+          "Requiere sesión si la API tiene login configurado. El modo replace borra los hechos de la carga previa del mismo archivo.",
         querystring: {
           type: "object",
           additionalProperties: false,
@@ -109,7 +111,7 @@ export function registrarCargas(
       },
     },
     async (request, reply) => {
-      exigirAutorizacion(request.headers["x-admin-token"], opciones.adminToken);
+      exigirAutorizacion(opciones.sesion ?? null, extraerBearer(request.headers.authorization));
 
       if (!request.isMultipart()) {
         throw new ErrorApi(

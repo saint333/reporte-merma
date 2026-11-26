@@ -14,15 +14,22 @@ const esquema = z.object({
   APP_ENV: z.enum(["development", "test", "production"]).default("development"),
   CACHE_TTL_SECONDS: z.coerce.number().int().min(1).default(60),
   RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(600),
-  ADMIN_TOKEN: z.preprocess(
-    (valor) =>
-      typeof valor === "string" && valor.trim() === "" ? undefined : valor,
+  UPLOAD_MAX_MB: z.coerce.number().int().min(1).max(50).default(20),
+  ADMIN_USER: z.preprocess(
+    (valor) => (typeof valor === "string" && valor.trim() === "" ? undefined : valor),
+    z.string().min(1).optional(),
+  ),
+  ADMIN_PASSWORD_HASH: z.preprocess(
+    (valor) => (typeof valor === "string" && valor.trim() === "" ? undefined : valor),
+    z.string().startsWith("scrypt$", "ADMIN_PASSWORD_HASH debe ser un hash scrypt").optional(),
+  ),
+  SESSION_SECRET: z.preprocess(
+    (valor) => (typeof valor === "string" && valor.trim() === "" ? undefined : valor),
     z
       .string()
-      .min(16, "ADMIN_TOKEN debe tener al menos 16 caracteres")
+      .min(32, "SESSION_SECRET debe tener al menos 32 caracteres")
       .optional(),
   ),
-  UPLOAD_MAX_MB: z.coerce.number().int().min(1).max(50).default(20),
 });
 
 export type Config = {
@@ -32,9 +39,30 @@ export type Config = {
   appEnv: "development" | "test" | "production";
   cacheTtlSeconds: number;
   rateLimitMax: number;
-  adminToken: string | null;
   uploadMaxBytes: number;
+  sesion: {
+    usuario: string;
+    passwordHash: string;
+    secreto: string;
+  } | null;
 };
+
+function sesionDesde(datos: z.infer<typeof esquema>): Config["sesion"] {
+  const { ADMIN_USER, ADMIN_PASSWORD_HASH, SESSION_SECRET } = datos;
+  if (!ADMIN_USER && !ADMIN_PASSWORD_HASH && !SESSION_SECRET) return null;
+
+  if (!ADMIN_USER || !ADMIN_PASSWORD_HASH || !SESSION_SECRET) {
+    throw new Error(
+      "Configuración inválida: ADMIN_USER, ADMIN_PASSWORD_HASH y SESSION_SECRET deben definirse juntos",
+    );
+  }
+
+  return {
+    usuario: ADMIN_USER,
+    passwordHash: ADMIN_PASSWORD_HASH,
+    secreto: SESSION_SECRET,
+  };
+}
 
 export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
   cargarEnv({ path: path.resolve(AQUI, "../.env") });
@@ -56,7 +84,7 @@ export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
     appEnv: resultado.data.APP_ENV,
     cacheTtlSeconds: resultado.data.CACHE_TTL_SECONDS,
     rateLimitMax: resultado.data.RATE_LIMIT_MAX,
-    adminToken: resultado.data.ADMIN_TOKEN ?? null,
     uploadMaxBytes: resultado.data.UPLOAD_MAX_MB * 1024 * 1024,
+    sesion: sesionDesde(resultado.data),
   };
 }

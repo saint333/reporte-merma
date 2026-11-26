@@ -2,7 +2,6 @@ import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "primereact/button";
 import { Message } from "primereact/message";
-import { Password } from "primereact/password";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { ColdStartNotice } from "../components/feedback/ColdStartNotice";
@@ -15,23 +14,16 @@ import { PageHeader } from "../components/layout/PageHeader";
 import { Card } from "primereact/card";
 import { Tag } from "primereact/tag";
 import { Dato } from "../components/ui/Dato";
-import { CLASE_ETIQUETA } from "../components/ui/estilos";
 import { Skeleton } from "primereact/skeleton";
-import {
-  actualizarRegistro,
-  guardarTokenAdmin,
-  leerTokenAdmin,
-} from "../lib/api";
+import { actualizarRegistro } from "../lib/api";
 import { dateLabel, decimal, money4 } from "../lib/formatters";
-import { catalogosQuery, registroQuery, saludQuery } from "../lib/queries";
+import { catalogosQuery, registroQuery } from "../lib/queries";
 import type { Registro, RegistroEditado } from "../lib/types";
 
 function FormularioEdicion({ registro }: { registro: Registro }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const catalogos = useQuery(catalogosQuery);
-  const salud = useQuery(saludQuery);
-  const requiereToken = salud.data?.carga_requiere_token ?? false;
 
   const [valores, setValores] = useState<ValoresRegistro>({
     fecha: registro.fecha,
@@ -39,7 +31,6 @@ function FormularioEdicion({ registro }: { registro: Registro }) {
     cantidad: registro.cantidad,
     motivo: registro.motivo,
   });
-  const [token, setToken] = useState(() => leerTokenAdmin());
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<{ mensaje: string; codigo?: string } | null>(
     null,
@@ -72,15 +63,6 @@ function FormularioEdicion({ registro }: { registro: Registro }) {
       return;
     }
 
-    const clave = token.trim();
-    if (requiereToken && clave.length < 16) {
-      setError({
-        mensaje:
-          "La clave de administración debe tener al menos 16 caracteres (ADMIN_TOKEN de la API).",
-      });
-      return;
-    }
-
     setEnviando(true);
     setError(null);
 
@@ -93,10 +75,8 @@ function FormularioEdicion({ registro }: { registro: Registro }) {
           cantidad: valores.cantidad,
           motivo: valores.motivo,
         },
-        requiereToken ? clave : "",
       );
 
-      if (requiereToken) guardarTokenAdmin(clave);
       setGuardado(actualizado);
       await queryClient.invalidateQueries();
     } catch (fallo) {
@@ -136,27 +116,7 @@ function FormularioEdicion({ registro }: { registro: Registro }) {
               deshabilitado={enviando}
             />
 
-            {requiereToken && (
-              <div className="mt-4">
-                <label htmlFor="token" className={CLASE_ETIQUETA}>
-                  Clave de administración
-                </label>
-                <Password
-                  inputId="token"
-                  value={token}
-                  onChange={(evento) => setToken(evento.target.value)}
-                  placeholder="ADMIN_TOKEN de la API"
-                  feedback={false}
-                  toggleMask
-                  className="mt-1 w-full"
-                  inputClassName="w-full"
-                />
-                <p className="text-muted mt-1 text-[11px]">
-                  Se guarda solo en esta pestaña (sessionStorage); nunca viaja en
-                  el bundle.
-                </p>
-              </div>
-            )}
+            
 
             {error && (
               <Message

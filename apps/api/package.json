@@ -12,6 +12,7 @@
     "db:quality": "tsx scripts/check-calidad.ts",
     "api:openapi": "tsx scripts/export-openapi.ts",
     "api:types": "npm run api:openapi && openapi-typescript ../../docs/api/openapi.json -o ../web/src/lib/api-schema.d.ts",
+    "auth:hash": "tsx scripts/hash-password.ts",
     "etl": "tsx src/etl/cli.ts",
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.build.json",

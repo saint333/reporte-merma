@@ -2,6 +2,8 @@ import type { FastifyInstance } from "fastify";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { emitirToken } from "../src/http/sesion.js";
+
 import { buildApp } from "../src/app.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
@@ -662,14 +664,14 @@ suite("API contra Postgres de prueba", () => {
     );
   });
 
-  it("POST /cargas no pide clave cuando no hay ADMIN_TOKEN", async () => {
+  it("POST /cargas no pide sesión cuando la API no tiene login", async () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/v1/cargas",
     });
 
-    // Sin token configurado la petición pasa de largo la autorización y solo
-    // falta el archivo.
+    // Sin sesión configurada (desarrollo y pruebas) la autorización no bloquea
+    // y solo falta el archivo.
     expect(res.statusCode).toBe(400);
     expect(res.json().error.codigo).toBe("ARCHIVO_REQUERIDO");
   });
@@ -831,13 +833,14 @@ suite("API contra Postgres de prueba", () => {
     expect(fechaInvalida.statusCode).toBe(422);
   });
 
-  it("POST /registros exige la clave cuando hay ADMIN_TOKEN", async () => {
-    const token = "token-de-prueba-123456";
+  it("POST /registros exige sesión cuando hay login configurado", async () => {
+    const secreto = "secreto-de-prueba-con-mas-de-32-caracteres";
+    const { token } = emitirToken("admin", secreto);
     const appManual = await buildApp({
       pool,
       corsOrigins: ["http://localhost:5173"],
       logger: false,
-      adminToken: token,
+      sesion: { usuario: "admin", passwordHash: "no-usado-aqui", secreto },
     });
 
     const payload = {
@@ -858,7 +861,7 @@ suite("API contra Postgres de prueba", () => {
     const conToken = await appManual.inject({
       method: "POST",
       url: "/api/v1/registros",
-      headers: { "x-admin-token": token },
+      headers: { authorization: `Bearer ${token}` },
       payload,
     });
     expect(conToken.statusCode).toBe(201);
@@ -867,13 +870,14 @@ suite("API contra Postgres de prueba", () => {
     await appManual.close();
   });
 
-  it("POST /cargas valida token, tipo de contenido y modo", async () => {
-    const token = "token-de-prueba-123456";
+  it("POST /cargas valida sesión, tipo de contenido y modo", async () => {
+    const secreto = "secreto-de-prueba-con-mas-de-32-caracteres";
+    const { token } = emitirToken("admin", secreto);
     const appCarga = await buildApp({
       pool,
       corsOrigins: ["http://localhost:5173"],
       logger: false,
-      adminToken: token,
+      sesion: { usuario: "admin", passwordHash: "no-usado-aqui", secreto },
     });
 
     const salud = await appCarga.inject({
@@ -892,14 +896,14 @@ suite("API contra Postgres de prueba", () => {
     const tokenIncorrecto = await appCarga.inject({
       method: "POST",
       url: "/api/v1/cargas",
-      headers: { "x-admin-token": "token-equivocado-123" },
+      headers: { authorization: "Bearer token-equivocado-123" },
     });
     expect(tokenIncorrecto.statusCode).toBe(401);
 
     const sinMultipart = await appCarga.inject({
       method: "POST",
       url: "/api/v1/cargas",
-      headers: { "x-admin-token": token, "content-type": "application/json" },
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
       payload: { archivo: "nada" },
     });
     expect(sinMultipart.statusCode).toBe(400);
@@ -909,7 +913,7 @@ suite("API contra Postgres de prueba", () => {
       method: "POST",
       url: "/api/v1/cargas?modo=replace",
       headers: {
-        "x-admin-token": token,
+        authorization: `Bearer ${token}`,
         "content-type": "multipart/form-data; boundary=----merma",
       },
     });
@@ -924,14 +928,14 @@ suite("API contra Postgres de prueba", () => {
       headers: {
         origin: "http://localhost:5173",
         "access-control-request-method": "POST",
-        "access-control-request-headers": "x-admin-token,content-type",
+        "access-control-request-headers": "authorization,content-type",
       },
     });
     expect(preflight.statusCode).toBeLessThan(300);
     expect(preflight.headers["access-control-allow-methods"]).toContain("POST");
     expect(
       String(preflight.headers["access-control-allow-headers"]).toLowerCase(),
-    ).toContain("x-admin-token");
+    ).toContain("authorization");
 
     await appCarga.close();
   });
@@ -1168,13 +1172,14 @@ suite("API contra Postgres de prueba", () => {
     ).toBe(true);
   });
 
-  it("PATCH y DELETE /registros exigen ADMIN_TOKEN", async () => {
-    const token = "token-de-prueba-123456";
+  it("PATCH y DELETE /registros exigen sesión", async () => {
+    const secreto = "secreto-de-prueba-con-mas-de-32-caracteres";
+    const { token } = emitirToken("admin", secreto);
     const appMutaciones = await buildApp({
       pool,
       corsOrigins: ["http://localhost:5173"],
       logger: false,
-      adminToken: token,
+      sesion: { usuario: "admin", passwordHash: "no-usado-aqui", secreto },
     });
 
     const lista = await appMutaciones.inject({
@@ -1202,7 +1207,7 @@ suite("API contra Postgres de prueba", () => {
     const conToken = await appMutaciones.inject({
       method: "PATCH",
       url: `/api/v1/registros/${objetivo.id}`,
-      headers: { "x-admin-token": token },
+      headers: { authorization: `Bearer ${token}` },
       payload: { cantidad: "55" },
     });
     expect(conToken.statusCode).toBe(200);
@@ -1214,7 +1219,7 @@ suite("API contra Postgres de prueba", () => {
       headers: {
         origin: "http://localhost:5173",
         "access-control-request-method": "DELETE",
-        "access-control-request-headers": "x-admin-token",
+        "access-control-request-headers": "authorization",
       },
     });
     expect(preflight.statusCode).toBeLessThan(300);

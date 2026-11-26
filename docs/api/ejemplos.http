@@ -11,7 +11,20 @@
 ### 1. Salud · estado del servicio y de la base
 GET {{host}}/api/v1/salud
 
-### esperado: 200 · db "ok" · carga_requiere_token false (sin ADMIN_TOKEN)
+### esperado: 200 · db "ok" · carga_requiere_token true (con login configurado)
+
+### 1b. Iniciar sesión · devuelve el token de 8 horas que usan las escrituras
+POST {{host}}/api/v1/auth/login
+content-type: application/json
+
+{
+  "usuario": "{{ADMIN_USER}}",
+  "password": "{{ADMIN_PASSWORD}}"
+}
+
+### esperado: 200 · data.token, tipo "Bearer", expira en ISO
+### copia data.token en @token para las peticiones de escritura
+@token = eyJ...
 
 ### 2. Catálogo de filtros
 GET {{host}}/api/v1/meta
@@ -92,7 +105,7 @@ Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 ------MermaBoundary--
 
 ### esperado: 200 · ya_cargado true si el hash ya existe (insertadas 0)
-### si defines ADMIN_TOKEN en la API, agrega: x-admin-token: <token>
+### requiere sesión: agrega authorization: Bearer {{token}}
 
 ### 18. Cargar el Excel · reemplazar la carga previa del mismo archivo
 POST {{host}}/api/v1/cargas?modo=replace&confirmar=true
@@ -125,7 +138,7 @@ Content-Type: application/json
 ### un motivo fuera del catálogo se guarda como SIN CLASIFICAR (MOTIVO_NO_CATALOGADO)
 ### un alias como "MALA IMPRESIÓN" se resuelve a ERROR DE IMPRESIÓN (MOTIVO_ALIAS)
 ### 409 REGISTRO_DUPLICADO si ya existe fecha + material + cantidad + motivo
-### si defines ADMIN_TOKEN en la API, agrega: x-admin-token: <token>
+### requiere sesión: agrega authorization: Bearer {{token}}
 
 ### 21. Detalle de un evento
 GET {{host}}/api/v1/registros/5390
@@ -143,7 +156,7 @@ Content-Type: application/json
 
 ### esperado: 200 · data.registro actualizado + snapshot antes/después en el historial
 ### 409 REGISTRO_DUPLICADO si la combinación ya existe
-### si defines ADMIN_TOKEN en la API, agrega: x-admin-token: <token>
+### requiere sesión: agrega authorization: Bearer {{token}}
 
 ### 23. Eliminar un evento · el hecho se borra y su rastro queda en el historial
 DELETE {{host}}/api/v1/registros/5390

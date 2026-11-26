@@ -23,6 +23,7 @@ import { registrarProyeccion } from "./routes/proyeccion.js";
 import { registrarRegistros } from "./routes/registros.js";
 import { registrarSalud } from "./routes/salud.js";
 import { registrarSeries } from "./routes/series.js";
+import { registrarSesion, type OpcionesSesion } from "./routes/sesion.js";
 
 const RUTAS_CACHEABLES = new Set([
   "/api/v1/meta",
@@ -42,8 +43,8 @@ export async function buildApp(opciones: {
   logger?: boolean;
   cacheTtlSeconds?: number;
   rateLimitMax?: number;
-  adminToken?: string | null;
   uploadMaxBytes?: number;
+  sesion?: OpcionesSesion | null;
 }): Promise<FastifyInstance> {
   const {
     pool,
@@ -51,8 +52,8 @@ export async function buildApp(opciones: {
     logger = true,
     cacheTtlSeconds = 60,
     rateLimitMax = 600,
-    adminToken = null,
     uploadMaxBytes = 20 * 1024 * 1024,
+    sesion = null,
   } = opciones;
 
   const app = Fastify({
@@ -76,7 +77,7 @@ export async function buildApp(opciones: {
   await app.register(cors, {
     origin: corsOrigins,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["content-type", "x-admin-token", "x-request-id"],
+    allowedHeaders: ["content-type", "authorization", "x-request-id"],
     credentials: false,
   });
   await app.register(multipart, {
@@ -133,8 +134,9 @@ export async function buildApp(opciones: {
   });
 
   registrarErrores(app);
+  if (sesion) registrarSesion(app, sesion);
   registrarSalud(app, pool, "0.1.0", {
-    requiereTokenCarga: Boolean(adminToken),
+    requiereTokenCarga: Boolean(sesion),
   });
   registrarMeta(app, pool);
   registrarCatalogos(app, pool);
@@ -143,10 +145,10 @@ export async function buildApp(opciones: {
   registrarCortes(app, pool);
   registrarPareto(app, pool);
   registrarProyeccion(app, pool);
-  registrarRegistros(app, pool, { adminToken });
+  registrarRegistros(app, pool, { sesion });
   registrarHistorial(app, pool);
   registrarAlertas(app, pool);
-  registrarCargas(app, pool, { adminToken, maxBytes: uploadMaxBytes });
+  registrarCargas(app, pool, { sesion, maxBytes: uploadMaxBytes });
 
   return app;
 }

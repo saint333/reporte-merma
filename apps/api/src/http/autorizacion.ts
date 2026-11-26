@@ -1,31 +1,21 @@
-import { timingSafeEqual } from "node:crypto";
-
 import { ErrorApi } from "./errores.js";
-
-function tokenValido(recibido: unknown, esperado: string): boolean {
-  if (typeof recibido !== "string") return false;
-
-  const a = Buffer.from(recibido, "utf8");
-  const b = Buffer.from(esperado, "utf8");
-  return a.length === b.length && timingSafeEqual(a, b);
-}
+import { verificarToken } from "./sesion.js";
 
 /**
- * Sin ADMIN_TOKEN la escritura queda abierta: es el modo por defecto.
- * Con ADMIN_TOKEN configurado, toda ruta de escritura exige x-admin-token.
+ * Con sesión configurada, la escritura exige un Bearer válido emitido por el login.
+ * Sin sesión configurada (solo desarrollo y pruebas) la escritura queda abierta.
  */
 export function exigirAutorizacion(
-  token: unknown,
-  adminToken: string | null,
+  sesion: { secreto: string } | null,
+  bearer: string | null,
 ): void {
-  if (!adminToken) return;
+  if (!sesion) return;
+  if (verificarToken(bearer, sesion.secreto)) return;
 
-  if (!tokenValido(token, adminToken)) {
-    throw new ErrorApi(
-      "NO_AUTORIZADO",
-      "La clave de administración no es válida.",
-      null,
-      401,
-    );
-  }
+  throw new ErrorApi(
+    "NO_AUTORIZADO",
+    "Inicia sesión para realizar esta acción.",
+    null,
+    401,
+  );
 }

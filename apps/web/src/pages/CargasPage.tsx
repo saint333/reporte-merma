@@ -9,7 +9,6 @@ import {
 } from "primereact/fileupload";
 import { Checkbox } from "primereact/checkbox";
 import { Message } from "primereact/message";
-import { Password } from "primereact/password";
 import { RadioButton } from "primereact/radiobutton";
 import { Tag } from "primereact/tag";
 import { Link } from "react-router-dom";
@@ -19,9 +18,9 @@ import { ErrorState, mensajeDeError } from "../components/feedback/ErrorState";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Card } from "primereact/card";
 import { Skeleton } from "primereact/skeleton";
-import { guardarTokenAdmin, leerTokenAdmin, subirCarga } from "../lib/api";
+import { subirCarga } from "../lib/api";
 import { dateLabel, dateTimeLabel, integer, money } from "../lib/formatters";
-import { cargasQuery, saludQuery } from "../lib/queries";
+import { cargasQuery } from "../lib/queries";
 import type { CargaHistorial, ReporteCarga } from "../lib/types";
 
 type Modo = "append" | "replace";
@@ -62,12 +61,9 @@ function EstadoCarga({ estado }: { estado: string }) {
 export default function CargasPage() {
   const queryClient = useQueryClient();
   const cargas = useQuery(cargasQuery);
-  const salud = useQuery(saludQuery);
-  const requiereToken = salud.data?.carga_requiere_token ?? false;
 
   const [archivo, setArchivo] = useState<File | null>(null);
   const [modo, setModo] = useState<Modo>("append");
-  const [token, setToken] = useState(() => leerTokenAdmin());
   const [confirmo, setConfirmo] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<{ mensaje: string; codigo?: string } | null>(
@@ -84,14 +80,6 @@ export default function CargasPage() {
       setError({ mensaje: "Selecciona el archivo .xlsx del reporte de mermas." });
       return;
     }
-    const clave = token.trim();
-    if (requiereToken && clave.length < 16) {
-      setError({
-        mensaje:
-          "La clave de administración debe tener al menos 16 caracteres (ADMIN_TOKEN de la API).",
-      });
-      return;
-    }
     if (modo === "replace" && !confirmo) {
       setError({
         mensaje:
@@ -105,8 +93,7 @@ export default function CargasPage() {
     setReporte(null);
 
     try {
-      const resultado = await subirCarga(archivo, modo, requiereToken ? clave : "");
-      if (requiereToken) guardarTokenAdmin(clave);
+      const resultado = await subirCarga(archivo, modo);
       setReporte(resultado);
       setArchivo(null);
       setConfirmo(false);
@@ -126,15 +113,6 @@ export default function CargasPage() {
         eyebrow="Datos"
         titulo="Cargas"
         descripcion="Sube el Excel del reporte y la API reemplaza o agrega los datos sin pasar por tu máquina"
-        acciones={
-          requiereToken ? (
-            <Tag
-              value="Requiere clave de administración"
-              severity="warning"
-              className="tag-app"
-            />
-          ) : undefined
-        }
       />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -232,30 +210,7 @@ export default function CargasPage() {
                 </label>
               )}
 
-              {requiereToken && (
-                <div>
-                  <label
-                    htmlFor="token"
-                    className="text-muted text-[10px] font-medium tracking-[0.12em] uppercase"
-                  >
-                    Clave de administración
-                  </label>
-                  <Password
-                    inputId="token"
-                    value={token}
-                    onChange={(evento) => setToken(evento.target.value)}
-                    placeholder="ADMIN_TOKEN de la API"
-                    feedback={false}
-                    toggleMask
-                    className="mt-1 w-full"
-                    inputClassName="w-full"
-                  />
-                  <p className="text-muted mt-1 text-[11px]">
-                    Esta API tiene ADMIN_TOKEN definido. Se guarda solo en esta
-                    pestaña (sessionStorage); nunca viaja en el bundle.
-                  </p>
-                </div>
-              )}
+              
 
               {error && (
                 <Message

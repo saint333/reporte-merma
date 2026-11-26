@@ -29,9 +29,7 @@ Lo que está bien y no requiere cambios inmediatos:
 
 ### A1. Escritura abierta por defecto
 - **Dónde:** `apps/api/src/http/autorizacion.ts`, `routes/registros.ts` (POST, PATCH, DELETE), `routes/cargas.ts` (POST).
-- **Qué pasa:** si `ADMIN_TOKEN` no está definido, `exigirAutorizacion` retorna sin validar. Cualquiera con acceso a la URL pública de Render puede crear, editar, borrar eventos o reemplazar datos con `modo=replace&confirmar=true`.
-- **Riesgo:** pérdida o alteración de datos de merma en producción.
-- **Propuesta:** en `config.ts`, exigir `ADMIN_TOKEN` cuando `APP_ENV=production` (fallar al arrancar). Mantener el modo abierto solo en `development` y `test`. Documentar en `render.yaml` que el token es obligatorio.
+- **Resuelto:** `ADMIN_TOKEN` desapareció. La escritura exige el Bearer que emite `POST /api/v1/auth/login`, y en `APP_ENV=production` la API no arranca sin `ADMIN_USER`, `ADMIN_PASSWORD_HASH` y `SESSION_SECRET` (`server.ts`). Así que ya no existe el modo abierto por descuido. Queda abierto solo en desarrollo y pruebas, sin esas variables.
 
 ### A2. Carga de Excel y reemplazo de datos sin token en producción
 - **Dónde:** `routes/cargas.ts`, y `render.yaml` (comentario: "Sin ella la carga queda abierta").
@@ -107,7 +105,7 @@ Lo que está bien y no requiere cambios inmediatos:
 
 Cada paso debe ir en su propio commit, sin footer de atribución, y con verificación antes de avanzar.
 
-1. **Seguridad de escritura (A1, A2):** exigir `ADMIN_TOKEN` en `APP_ENV=production`; pruebas de `exigirAutorizacion` y de `config.ts`. Verificar con `npm test` en `apps/api`.
+1. **Seguridad de escritura (A1, A2):** resuelto con la sesión de 8 horas; falta correr `api.test.ts` contra Postgres para cerrarlo del todo.
 2. **Origen y CORS (A3):** validar `CORS_ORIGINS` en producción. Pruebas de `cargarConfig`.
 3. **Protección de lectura de cargas (M1):** decidir con el usuario el alcance; después aplicar y probar.
 4. **Límites de consulta (M2, M5):** `statement_timeout` y tope en CSV. Medir antes y después con una consulta de referencia.

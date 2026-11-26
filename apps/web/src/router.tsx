@@ -1,7 +1,9 @@
-import { lazy } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { lazy, type ReactNode } from "react";
+import { createBrowserRouter, Navigate, useLocation } from "react-router-dom";
 
 import { Shell } from "./components/layout/Shell";
+import LoginPage from "./pages/LoginPage";
+import { leerSesion } from "./lib/sesion";
 
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const RegistrosPage = lazy(() => import("./pages/RegistrosPage"));
@@ -11,10 +13,23 @@ const HistorialProductoPage = lazy(() => import("./pages/HistorialProductoPage")
 const AnalisisPage = lazy(() => import("./pages/AnalisisPage"));
 const CargasPage = lazy(() => import("./pages/CargasPage"));
 
+function RutaProtegida({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  if (!leerSesion()) {
+    return <Navigate to="/login" replace state={{ desde: location.pathname + location.search }} />;
+  }
+  return children;
+}
+
 export const router = createBrowserRouter([
+  { path: "/login", element: <LoginPage /> },
   {
     path: "/",
-    element: <Shell />,
+    element: (
+      <RutaProtegida>
+        <Shell />
+      </RutaProtegida>
+    ),
     children: [
       { index: true, element: <DashboardPage /> },
       { path: "registros", element: <RegistrosPage /> },

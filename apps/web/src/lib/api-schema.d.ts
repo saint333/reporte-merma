@@ -452,7 +452,7 @@ export interface paths {
         put?: never;
         /**
          * Registra manualmente un evento de merma
-         * @description Resuelve el motivo con el catálogo y los alias (o lo guarda como SIN CLASIFICAR), calcula la semana ISO, el valor unitario y el costo total con las mismas reglas del ETL, y devuelve las observaciones de campaña, cantidad atípica, motivo no catalogado o pallet singular. Deja una carga de auditoría con el evento. Solo pide la cabecera x-admin-token si la API define ADMIN_TOKEN.
+         * @description Resuelve el motivo con el catálogo y los alias (o lo guarda como SIN CLASIFICAR), calcula la semana ISO, el valor unitario y el costo total con las mismas reglas del ETL, y devuelve las observaciones de campaña, cantidad atípica, motivo no catalogado o pallet singular. Deja una carga de auditoría con el evento. Requiere sesión si la API tiene login configurado.
          */
         post: {
             parameters: {
@@ -524,7 +524,7 @@ export interface paths {
         post?: never;
         /**
          * Elimina un evento de merma
-         * @description Borra el evento y conserva su rastro en el historial. Solo pide x-admin-token si la API define ADMIN_TOKEN.
+         * @description Borra el evento y conserva su rastro en el historial. Requiere sesión si la API tiene login configurado.
          */
         delete: {
             parameters: {
@@ -551,7 +551,7 @@ export interface paths {
         head?: never;
         /**
          * Edita un evento de merma
-         * @description Actualiza los campos enviados, resuelve el motivo igual que el alta manual (catálogo, alias o SIN CLASIFICAR), recalcula semana ISO, valor unitario, costo total y hash con las reglas del ETL, devuelve las observaciones y registra el antes/después en el historial. Solo pide x-admin-token si la API define ADMIN_TOKEN.
+         * @description Actualiza los campos enviados, resuelve el motivo igual que el alta manual (catálogo, alias o SIN CLASIFICAR), recalcula semana ISO, valor unitario, costo total y hash con las reglas del ETL, devuelve las observaciones y registra el antes/después en el historial. Requiere sesión si la API tiene login configurado.
          */
         patch: {
             parameters: {
@@ -804,7 +804,7 @@ export interface paths {
         put?: never;
         /**
          * Carga el Excel de mermas desde el navegador
-         * @description Recibe el archivo en multipart/form-data (campo archivo) y ejecuta el mismo ETL que la CLI. Solo pide la cabecera x-admin-token si la API define ADMIN_TOKEN. El modo replace borra los hechos de la carga previa del mismo archivo.
+         * @description Recibe el archivo en multipart/form-data (campo archivo) y ejecuta el mismo ETL que la CLI. Requiere sesión si la API tiene login configurado. El modo replace borra los hechos de la carga previa del mismo archivo.
          */
         post: {
             parameters: {

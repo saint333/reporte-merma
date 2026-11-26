@@ -2,7 +2,6 @@ import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "primereact/button";
 import { Message } from "primereact/message";
-import { Password } from "primereact/password";
 import { Link } from "react-router-dom";
 
 import { ColdStartNotice } from "../components/feedback/ColdStartNotice";
@@ -13,25 +12,17 @@ import {
 } from "../components/forms/CamposRegistro";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Card } from "primereact/card";
-import { Tag } from "primereact/tag";
 import { Dato } from "../components/ui/Dato";
-import { CLASE_ETIQUETA } from "../components/ui/estilos";
 import { Skeleton } from "primereact/skeleton";
-import {
-  crearRegistroManual,
-  guardarTokenAdmin,
-  leerTokenAdmin,
-} from "../lib/api";
+import { crearRegistroManual } from "../lib/api";
 import { hoyLima } from "../lib/fechas";
 import { dateLabel, decimal, money4 } from "../lib/formatters";
-import { catalogosQuery, saludQuery } from "../lib/queries";
+import { catalogosQuery } from "../lib/queries";
 import type { RegistroManualCreado } from "../lib/types";
 
 export default function NuevoRegistroPage() {
   const queryClient = useQueryClient();
   const catalogos = useQuery(catalogosQuery);
-  const salud = useQuery(saludQuery);
-  const requiereToken = salud.data?.carga_requiere_token ?? false;
 
   const [valores, setValores] = useState<ValoresRegistro>({
     fecha: hoyLima(),
@@ -39,7 +30,6 @@ export default function NuevoRegistroPage() {
     cantidad: "",
     motivo: "",
   });
-  const [token, setToken] = useState(() => leerTokenAdmin());
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<{ mensaje: string; codigo?: string } | null>(
     null,
@@ -72,15 +62,6 @@ export default function NuevoRegistroPage() {
       return;
     }
 
-    const clave = token.trim();
-    if (requiereToken && clave.length < 16) {
-      setError({
-        mensaje:
-          "La clave de administración debe tener al menos 16 caracteres (ADMIN_TOKEN de la API).",
-      });
-      return;
-    }
-
     setEnviando(true);
     setError(null);
     setCreado(null);
@@ -93,10 +74,8 @@ export default function NuevoRegistroPage() {
           cantidad: valores.cantidad,
           motivo: valores.motivo,
         },
-        requiereToken ? clave : "",
       );
 
-      if (requiereToken) guardarTokenAdmin(clave);
       setCreado(resultado);
       setValores((actual) => ({ ...actual, cantidad: "" }));
       await queryClient.invalidateQueries();
@@ -113,15 +92,6 @@ export default function NuevoRegistroPage() {
         eyebrow="Datos"
         titulo="Nuevo registro"
         descripcion="Agrega un evento de merma que no viene en el Excel: el sistema calcula semana, valor unitario y costo con las mismas reglas de la carga."
-        acciones={
-          requiereToken ? (
-            <Tag
-              value="Requiere clave de administración"
-              severity="warning"
-              className="tag-app"
-            />
-          ) : undefined
-        }
       />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -149,28 +119,6 @@ export default function NuevoRegistroPage() {
                 onCambio={cambiar}
                 deshabilitado={enviando}
               />
-
-              {requiereToken && (
-                <div className="mt-4">
-                  <label htmlFor="token" className={CLASE_ETIQUETA}>
-                    Clave de administración
-                  </label>
-                  <Password
-                    inputId="token"
-                    value={token}
-                    onChange={(evento) => setToken(evento.target.value)}
-                    placeholder="ADMIN_TOKEN de la API"
-                    feedback={false}
-                    toggleMask
-                    className="mt-1 w-full"
-                    inputClassName="w-full"
-                  />
-                  <p className="text-muted mt-1 text-[11px]">
-                    Se guarda solo en esta pestaña (sessionStorage); nunca viaja
-                    en el bundle.
-                  </p>
-                </div>
-              )}
 
               {error && (
                 <Message

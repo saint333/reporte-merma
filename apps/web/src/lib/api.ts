@@ -1,3 +1,4 @@
+import { borrarSesion, guardarSesion, tokenSesion, type Sesion } from "./sesion";
 import type {
   EdicionRegistroEntrada,
   RegistroEditado,
@@ -43,6 +44,25 @@ const BASE = (
   import.meta.env.VITE_API_URL ?? "http://localhost:8000"
 ).replace(/\/$/, "");
 
+/** Se invoca cuando la API responde 401 a una petición con sesión. */
+let alSesionVencida: (() => void) | null = null;
+
+export function alSesionVencidaCallback(callback: (() => void) | null): void {
+  alSesionVencida = callback;
+}
+
+function cabeceraSesion(): Record<string, string> {
+  const token = tokenSesion();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function revisarSesion(respuesta: Response): void {
+  if (respuesta.status === 401 && tokenSesion()) {
+    borrarSesion();
+    alSesionVencida?.();
+  }
+}
+
 function construirUrl(path: string, params: Parametros): string {
   const qs = new URLSearchParams();
 
@@ -65,7 +85,7 @@ export async function getJson<T>(
   try {
     respuesta = await fetch(construirUrl(path, params), {
       signal,
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", ...cabeceraSesion() },
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
@@ -75,6 +95,7 @@ export async function getJson<T>(
   }
 
   if (!respuesta.ok) {
+    revisarSesion(respuesta);
     const payload = (await respuesta
       .json()
       .catch(() => null)) as ErrorApiPayload | null;
@@ -84,35 +105,14 @@ export async function getJson<T>(
   return (await respuesta.json()) as T;
 }
 
-const CLAVE_TOKEN = "merma.admin-token";
-
-export function leerTokenAdmin(): string {
-  try {
-    return sessionStorage.getItem(CLAVE_TOKEN) ?? "";
-  } catch {
-    return "";
-  }
-}
-
-export function guardarTokenAdmin(token: string): void {
-  try {
-    if (token) sessionStorage.setItem(CLAVE_TOKEN, token);
-    else sessionStorage.removeItem(CLAVE_TOKEN);
-  } catch {
-    // Navegación privada sin almacenamiento: la clave vive solo en memoria.
-  }
-}
-
 async function enviarJson<T>(
   path: string,
-  metodo: "PATCH" | "DELETE",
+  metodo: "POST" | "PATCH" | "DELETE",
   cuerpo: unknown,
-  token: string,
   signal?: AbortSignal,
 ): Promise<T> {
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = { Accept: "application/json", ...cabeceraSesion() };
   if (cuerpo !== undefined) headers["content-type"] = "application/json";
-  if (token) headers["x-admin-token"] = token;
 
   let respuesta: Response;
   try {
@@ -134,37 +134,54 @@ async function enviarJson<T>(
     .catch(() => null)) as (ErrorApiPayload & { data?: T }) | null;
 
   if (!respuesta.ok || !payload?.data) {
+    revisarSesion(respuesta);
     throw new ApiError(respuesta.status, payload);
   }
 
   return payload.data;
 }
 
+export async function iniciarSesion(
+  usuario: string,
+  password: string,
+  signal?: AbortSignal,
+): Promise<Sesion> {
+  const data = await enviarJson<{ token: string; usuario: string; expira: string }>(
+    "/api/v1/auth/login",
+    "POST",
+    { usuario, password },
+    signal,
+  );
+  const sesion: Sesion = { token: data.token, usuario: data.usuario, expira: data.expira };
+  guardarSesion(sesion);
+  return sesion;
+}
+
+export function cerrarSesion(): void {
+  borrarSesion();
+}
+
 export async function actualizarRegistro(
   id: number,
   entrada: EdicionRegistroEntrada,
-  token = "",
   signal?: AbortSignal,
 ): Promise<RegistroEditado> {
   return enviarJson<RegistroEditado>(
     `/api/v1/registros/${id}`,
     "PATCH",
     entrada,
-    token,
     signal,
   );
 }
 
 export async function eliminarRegistro(
   id: number,
-  token = "",
   signal?: AbortSignal,
 ): Promise<SnapshotRegistro> {
   const data = await enviarJson<{ registro: SnapshotRegistro }>(
     `/api/v1/registros/${id}`,
     "DELETE",
     undefined,
-    token,
     signal,
   );
 
@@ -174,7 +191,6 @@ export async function eliminarRegistro(
 export async function subirCarga(
   archivo: File,
   modo: "append" | "replace",
-  token = "",
   signal?: AbortSignal,
 ): Promise<ReporteCarga> {
   const form = new FormData();
@@ -183,9 +199,7 @@ export async function subirCarga(
   const query = new URLSearchParams({ modo });
   if (modo === "replace") query.set("confirmar", "true");
 
-  // La clave solo se envía si la API la exige (ADMIN_TOKEN configurado).
-  const headers: Record<string, string> = {};
-  if (token) headers["x-admin-token"] = token;
+  const headers: Record<string, string> = { ...cabeceraSesion() };
 
   let respuesta: Response;
   try {
@@ -215,14 +229,13 @@ export async function subirCarga(
 
 export async function crearRegistroManual(
   entrada: RegistroManualEntrada,
-  token = "",
   signal?: AbortSignal,
 ): Promise<RegistroManualCreado> {
   const headers: Record<string, string> = {
     "content-type": "application/json",
     Accept: "application/json",
+    ...cabeceraSesion(),
   };
-  if (token) headers["x-admin-token"] = token;
 
   let respuesta: Response;
   try {
@@ -259,12 +272,15 @@ export async function descargarCsv(
   let respuesta: Response;
 
   try {
-    respuesta = await fetch(construirUrl("/api/v1/registros.csv", params));
+    respuesta = await fetch(construirUrl("/api/v1/registros.csv", params), {
+      headers: cabeceraSesion(),
+    });
   } catch {
     throw new ApiError(0, null);
   }
 
   if (!respuesta.ok) {
+    revisarSesion(respuesta);
     const payload = (await respuesta
       .json()
       .catch(() => null)) as ErrorApiPayload | null;

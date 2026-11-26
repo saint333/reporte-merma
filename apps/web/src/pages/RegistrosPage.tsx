@@ -5,7 +5,6 @@ import { Dialog } from "primereact/dialog";
 import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
 import { Message } from "primereact/message";
-import { Password } from "primereact/password";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
 import { ColdStartNotice } from "../components/feedback/ColdStartNotice";
@@ -19,12 +18,10 @@ import { Skeleton } from "primereact/skeleton";
 import {
   descargarCsv,
   eliminarRegistro,
-  guardarTokenAdmin,
-  leerTokenAdmin,
 } from "../lib/api";
 import { dateLabel, decimal, integer, money4 } from "../lib/formatters";
 import { paramsFiltros, useFiltros } from "../lib/filters";
-import { registrosQuery, saludQuery } from "../lib/queries";
+import { registrosQuery } from "../lib/queries";
 import type { Registro } from "../lib/types";
 
 const ORDENES = ["fecha", "costo_total", "cantidad", "semana_iso"] as const;
@@ -44,15 +41,12 @@ export default function RegistrosPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { filtros } = useFiltros();
-  const salud = useQuery(saludQuery);
-  const requiereToken = salud.data?.carga_requiere_token ?? false;
   const [searchParams, setSearchParams] = useSearchParams();
   const qUrl = searchParams.get("q") ?? "";
   const [busqueda, setBusqueda] = useState(qUrl);
   const [exportando, setExportando] = useState(false);
   const [errorCsv, setErrorCsv] = useState<string | null>(null);
   const [porEliminar, setPorEliminar] = useState<Registro | null>(null);
-  const [tokenEliminar, setTokenEliminar] = useState(() => leerTokenAdmin());
   const [eliminando, setEliminando] = useState(false);
   const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -138,23 +132,11 @@ export default function RegistrosPage() {
   async function confirmarEliminar() {
     if (!porEliminar) return;
 
-    const clave = tokenEliminar.trim();
-    if (requiereToken && clave.length < 16) {
-      setErrorEliminar(
-        "La clave de administración debe tener al menos 16 caracteres (ADMIN_TOKEN de la API).",
-      );
-      return;
-    }
-
     setEliminando(true);
     setErrorEliminar(null);
 
     try {
-      await eliminarRegistro(
-        porEliminar.id,
-        requiereToken ? clave : "",
-      );
-      if (requiereToken) guardarTokenAdmin(clave);
+      await eliminarRegistro(porEliminar.id);
       setAviso(
         `Registro #${porEliminar.id} eliminado. El antes/después quedó en el historial del producto.`,
       );
@@ -435,27 +417,6 @@ export default function RegistrosPage() {
                 {money4(porEliminar.costo_total)}
               </p>
             </div>
-
-            {requiereToken && (
-              <div className="mt-3">
-                <label
-                  htmlFor="token-eliminar"
-                  className="text-muted text-[10px] font-medium tracking-[0.12em] uppercase"
-                >
-                  Clave de administración
-                </label>
-                <Password
-                  inputId="token-eliminar"
-                  value={tokenEliminar}
-                  onChange={(evento) => setTokenEliminar(evento.target.value)}
-                  placeholder="ADMIN_TOKEN de la API"
-                  feedback={false}
-                  toggleMask
-                  className="mt-1 w-full"
-                  inputClassName="w-full"
-                />
-              </div>
-            )}
 
             {errorEliminar && (
               <Message severity="error" text={errorEliminar} className="mt-3" />

@@ -10,6 +10,7 @@ import {
 } from "../http/filtros.js";
 import { queryRegistros } from "../http/openapi.js";
 import { leerEnteroPositivo } from "../http/parametros.js";
+import { extraerBearer } from "./sesion.js";
 import { envelope } from "../http/respuesta.js";
 import {
   editarRegistro,
@@ -98,7 +99,7 @@ function aCsv(filas: FilaRegistro[]): string {
 export function registrarRegistros(
   app: FastifyInstance,
   pool: Pool,
-  opciones: { adminToken: string | null },
+  opciones: { sesion?: { secreto: string } | null },
 ): void {
   app.get(
     "/api/v1/registros",
@@ -136,7 +137,7 @@ export function registrarRegistros(
         summary: "Registra manualmente un evento de merma",
         description:
           "Resuelve el motivo con el catálogo y los alias (o lo guarda como SIN CLASIFICAR), calcula la semana ISO, el valor unitario y el costo total con las mismas reglas del ETL, y devuelve las observaciones de campaña, cantidad atípica, motivo no catalogado o pallet singular. " +
-          "Deja una carga de auditoría con el evento. Solo pide la cabecera x-admin-token si la API define ADMIN_TOKEN.",
+          "Deja una carga de auditoría con el evento. Requiere sesión si la API tiene login configurado. ",
         body: {
           type: "object",
           additionalProperties: false,
@@ -146,7 +147,7 @@ export function registrarRegistros(
       },
     },
     async (request, reply) => {
-      exigirAutorizacion(request.headers["x-admin-token"], opciones.adminToken);
+      exigirAutorizacion(opciones.sesion ?? null, extraerBearer(request.headers.authorization));
 
       const entrada = parseRegistroManual(request.body);
       const data = await crearRegistroManual(pool, {
@@ -194,7 +195,7 @@ export function registrarRegistros(
         summary: "Edita un evento de merma",
         description:
           "Actualiza los campos enviados, resuelve el motivo igual que el alta manual (catálogo, alias o SIN CLASIFICAR), recalcula semana ISO, valor unitario, costo total y hash con las reglas del ETL, devuelve las observaciones y registra el antes/después en el historial. " +
-          "Solo pide x-admin-token si la API define ADMIN_TOKEN.",
+          "Requiere sesión si la API tiene login configurado.",
         params: paramsId,
         body: {
           type: "object",
@@ -204,7 +205,7 @@ export function registrarRegistros(
       },
     },
     async (request) => {
-      exigirAutorizacion(request.headers["x-admin-token"], opciones.adminToken);
+      exigirAutorizacion(opciones.sesion ?? null, extraerBearer(request.headers.authorization));
 
       const id = leerEnteroPositivo(request.params.id, "El id del registro");
       const entrada = parseEditarRegistro(request.body);
@@ -231,12 +232,12 @@ export function registrarRegistros(
         tags: ["Registros"],
         summary: "Elimina un evento de merma",
         description:
-          "Borra el evento y conserva su rastro en el historial. Solo pide x-admin-token si la API define ADMIN_TOKEN.",
+          "Borra el evento y conserva su rastro en el historial. Requiere sesión si la API tiene login configurado.",
         params: paramsId,
       },
     },
     async (request) => {
-      exigirAutorizacion(request.headers["x-admin-token"], opciones.adminToken);
+      exigirAutorizacion(opciones.sesion ?? null, extraerBearer(request.headers.authorization));
 
       const id = leerEnteroPositivo(request.params.id, "El id del registro");
       const registro = await eliminarRegistro(pool, id);

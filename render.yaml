@@ -18,8 +18,14 @@ services:
         sync: false
       - key: CORS_ORIGINS
         sync: false
-      # Opcional: si se define (mínimo 16 caracteres), la carga desde la web
-      # exige la cabecera x-admin-token. Sin ella la carga queda abierta.
+      # Obligatorio en producción: la sesión es el único control de escritura.
+      # Si falta alguna de las tres, la API no arranca.
+      - key: ADMIN_USER
+        sync: false
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
       - key: UPLOAD_MAX_MB
         value: "20"
       - key: APP_ENV

@@ -141,7 +141,9 @@ Swagger: http://localhost:8000/docs
 | `TZ` | `America/Lima` | No |
 | `CACHE_TTL_SECONDS` | `60` | No |
 | `RATE_LIMIT_MAX` | `600` | No |
-| `ADMIN_TOKEN` | vacío por defecto; opcional (mínimo 16 caracteres) | **Sí**, si se define |
+| `ADMIN_USER` | sin valor | **Sí** (en producción) |
+| `ADMIN_PASSWORD_HASH` | sin valor | **Sí** (en producción) |
+| `SESSION_SECRET` | sin valor | **Sí** (en producción) |
 | `UPLOAD_MAX_MB` | `20` | No |
 
 ### 5.4 Migraciones en el servicio
@@ -156,7 +158,7 @@ npm run db:migrate
 
 Con el pipeline actual esto lo hace GitHub Actions antes de disparar el Deploy Hook (§8.2). La imagen de producción no incluye `tsx`: el script de migración vive en `scripts/migrate.ts` y se ejecuta en la máquina que despliega o en el runner, nunca en el contenedor.
 
-La carga del Excel desde la web funciona **sin clave**: `ADMIN_TOKEN` es opcional y no se declara en `render.yaml`. Si lo defines en el panel de Render, `POST /api/v1/cargas` exige la cabecera `x-admin-token` y la pantalla **Cargas** muestra el campo (lo detecta por `carga_requiere_token` en `/salud`). Sin token, cualquiera con la URL del sitio puede subir archivos, así que actívalo si el sitio deja de ser privado.
+La carga del Excel desde la web y todas las escrituras exigen sesión: el usuario y la clave salen de `ADMIN_USER` y `ADMIN_PASSWORD_HASH`, y el token lo emite `POST /api/v1/auth/login` con `SESSION_SECRET`. En producción la API no arranca si falta alguna de las tres. La pantalla **Cargas** detecta el estado por `carga_requiere_token` en `/salud`.
 
 ### 5.5 Verificación
 
