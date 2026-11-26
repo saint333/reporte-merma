@@ -900,6 +900,20 @@ suite("API contra Postgres de prueba", () => {
     });
     expect(tokenIncorrecto.statusCode).toBe(401);
 
+    const historialSinToken = await appCarga.inject({
+      method: "GET",
+      url: "/api/v1/cargas",
+    });
+    expect(historialSinToken.statusCode).toBe(401);
+    expect(historialSinToken.json().error.codigo).toBe("SESION_REQUERIDA");
+
+    const historialConToken = await appCarga.inject({
+      method: "GET",
+      url: "/api/v1/cargas",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(historialConToken.statusCode).toBe(200);
+
     const sinMultipart = await appCarga.inject({
       method: "POST",
       url: "/api/v1/cargas",

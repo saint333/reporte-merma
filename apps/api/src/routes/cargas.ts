@@ -210,6 +210,8 @@ export function registrarCargas(
       },
     },
     async (request) => {
+      exigirAutorizacion(opciones.sesion ?? null, extraerBearer(request.headers.authorization));
+
       const { rows } = await pool.query<FilaCarga>(
         `select id,
                 archivo,
