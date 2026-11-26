@@ -3,7 +3,7 @@
   "info": {
     "title": "API del Reporte de Merma",
     "version": "0.1.0",
-    "description": "Endpoints de consulta para KPIs, series, cortes, Pareto, proyección, registros y alertas, más la carga del Excel y el registro manual de mermas."
+    "description": "Endpoints de consulta para KPIs, series, cortes, Pareto, proyección, registros y alertas; carga del Excel, registro manual, edición y eliminación de eventos, y su historial de cambios."
   },
   "components": {
     "schemas": {}
@@ -37,7 +37,7 @@
     },
     "/api/v1/catalogos": {
       "get": {
-        "summary": "Materiales y motivos para registrar un evento manual",
+        "summary": "Materiales y motivos para registrar o editar un evento",
         "tags": [
           "Catálogo"
         ],
@@ -760,6 +760,152 @@
         }
       }
     },
+    "/api/v1/registros/{id}": {
+      "get": {
+        "summary": "Detalle de un evento de merma",
+        "tags": [
+          "Registros"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Identificador del evento de merma."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Edita un evento de merma",
+        "tags": [
+          "Registros"
+        ],
+        "description": "Actualiza los campos enviados, recalcula semana ISO, valor unitario, costo total y hash con las reglas del ETL, y registra el antes/después en el historial. Solo pide x-admin-token si la API define ADMIN_TOKEN.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "fecha": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "examples": [
+                      "2026-11-25"
+                    ]
+                  },
+                  "codigo_material": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "examples": [
+                      10012345
+                    ]
+                  },
+                  "cantidad": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "examples": [
+                      "12.5"
+                    ]
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "examples": [
+                      "ROTURA DE EMBALAJES"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Identificador del evento de merma."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Elimina un evento de merma",
+        "tags": [
+          "Registros"
+        ],
+        "description": "Borra el evento y conserva su rastro en el historial. Solo pide x-admin-token si la API define ADMIN_TOKEN.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Identificador del evento de merma."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/registros/{id}/historial": {
+      "get": {
+        "summary": "Cambios de un evento de merma",
+        "tags": [
+          "Historial"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Identificador del evento de merma."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/api/v1/registros.csv": {
       "get": {
         "summary": "Exporta los registros filtrados a CSV",
@@ -899,6 +1045,53 @@
             "name": "codigo",
             "required": false,
             "description": "Código exacto de material."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/productos/{codigo}/historial": {
+      "get": {
+        "summary": "Historial de cambios de un producto",
+        "tags": [
+          "Historial"
+        ],
+        "description": "Devuelve las altas, ediciones y eliminaciones de todos los eventos del SKU, incluidos los cambios que lo movieron a otro material.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "in": "query",
+            "name": "page",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            },
+            "in": "query",
+            "name": "per_page",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "path",
+            "name": "codigo",
+            "required": true,
+            "description": "Código del material (SKU)."
           }
         ],
         "responses": {
@@ -1082,7 +1275,11 @@
     },
     {
       "name": "Registros",
-      "description": "Detalle paginado y CSV"
+      "description": "Detalle, edición y eliminación de eventos"
+    },
+    {
+      "name": "Historial",
+      "description": "Auditoría de cambios por evento y por producto"
     },
     {
       "name": "Alertas",

@@ -15,6 +15,7 @@ import { registrarAlertas } from "./routes/alertas.js";
 import { registrarCargas } from "./routes/cargas.js";
 import { registrarCatalogos } from "./routes/catalogos.js";
 import { registrarCortes } from "./routes/cortes.js";
+import { registrarHistorial } from "./routes/historial.js";
 import { registrarKpis } from "./routes/kpis.js";
 import { registrarMeta } from "./routes/meta.js";
 import { registrarPareto } from "./routes/pareto.js";
@@ -74,7 +75,7 @@ export async function buildApp(opciones: {
   });
   await app.register(cors, {
     origin: corsOrigins,
-    methods: ["GET", "POST", "OPTIONS"],
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["content-type", "x-admin-token", "x-request-id"],
     credentials: false,
   });
@@ -89,7 +90,7 @@ export async function buildApp(opciones: {
         title: "API del Reporte de Merma",
         version: "0.1.0",
         description:
-          "Endpoints de consulta para KPIs, series, cortes, Pareto, proyección, registros y alertas, más la carga del Excel y el registro manual de mermas.",
+          "Endpoints de consulta para KPIs, series, cortes, Pareto, proyección, registros y alertas; carga del Excel, registro manual, edición y eliminación de eventos, y su historial de cambios.",
       },
       servers: [{ url: "/", description: "Origen actual" }],
       tags: [
@@ -100,7 +101,11 @@ export async function buildApp(opciones: {
         { name: "Cortes", description: "Rankings por dimensión" },
         { name: "Pareto", description: "ABC por SKU" },
         { name: "Proyección", description: "Escenarios de cierre" },
-        { name: "Registros", description: "Detalle paginado y CSV" },
+        { name: "Registros", description: "Detalle, edición y eliminación de eventos" },
+        {
+          name: "Historial",
+          description: "Auditoría de cambios por evento y por producto",
+        },
         { name: "Alertas", description: "Calidad y concentración" },
         { name: "Cargas", description: "Carga del Excel desde la web" },
       ],
@@ -139,6 +144,7 @@ export async function buildApp(opciones: {
   registrarPareto(app, pool);
   registrarProyeccion(app, pool);
   registrarRegistros(app, pool, { adminToken });
+  registrarHistorial(app, pool);
   registrarAlertas(app, pool);
   registrarCargas(app, pool, { adminToken, maxBytes: uploadMaxBytes });
 

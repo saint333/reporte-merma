@@ -1,7 +1,10 @@
 import type {
+  EdicionRegistroEntrada,
+  Registro,
   RegistroManualCreado,
   RegistroManualEntrada,
   ReporteCarga,
+  SnapshotRegistro,
 } from "./types";
 
 export type Parametros = Record<
@@ -98,6 +101,76 @@ export function guardarTokenAdmin(token: string): void {
   } catch {
     // Navegación privada sin almacenamiento: la clave vive solo en memoria.
   }
+}
+
+async function enviarJson<T>(
+  path: string,
+  metodo: "PATCH" | "DELETE",
+  cuerpo: unknown,
+  token: string,
+  signal?: AbortSignal,
+): Promise<T> {
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (cuerpo !== undefined) headers["content-type"] = "application/json";
+  if (token) headers["x-admin-token"] = token;
+
+  let respuesta: Response;
+  try {
+    respuesta = await fetch(`${BASE}${path}`, {
+      method: metodo,
+      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+      signal,
+      headers,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
+    throw new ApiError(0, null);
+  }
+
+  const payload = (await respuesta
+    .json()
+    .catch(() => null)) as (ErrorApiPayload & { data?: T }) | null;
+
+  if (!respuesta.ok || !payload?.data) {
+    throw new ApiError(respuesta.status, payload);
+  }
+
+  return payload.data;
+}
+
+export async function actualizarRegistro(
+  id: number,
+  entrada: EdicionRegistroEntrada,
+  token = "",
+  signal?: AbortSignal,
+): Promise<Registro> {
+  const data = await enviarJson<{ registro: Registro }>(
+    `/api/v1/registros/${id}`,
+    "PATCH",
+    entrada,
+    token,
+    signal,
+  );
+
+  return data.registro;
+}
+
+export async function eliminarRegistro(
+  id: number,
+  token = "",
+  signal?: AbortSignal,
+): Promise<SnapshotRegistro> {
+  const data = await enviarJson<{ registro: SnapshotRegistro }>(
+    `/api/v1/registros/${id}`,
+    "DELETE",
+    undefined,
+    token,
+    signal,
+  );
+
+  return data.registro;
 }
 
 export async function subirCarga(

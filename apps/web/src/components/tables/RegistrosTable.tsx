@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import { dateLabel, integer, money } from "../../lib/formatters";
 import type { Registro } from "../../lib/types";
 import { Badge } from "../ui/Badge";
@@ -59,11 +61,13 @@ export function RegistrosTable({
   sort,
   order,
   onSort,
+  acciones,
 }: {
   filas: Registro[];
   sort: Sort;
   order: Order;
   onSort: (campo: Sort) => void;
+  acciones?: { onEliminar: (fila: Registro) => void };
 }) {
   return (
     <div>
@@ -112,6 +116,9 @@ export function RegistrosTable({
                 onSort={onSort}
                 alineacion="right"
               />
+              {acciones && (
+                <Cabecera etiqueta="Acciones" sort={sort} order={order} onSort={onSort} />
+              )}
             </tr>
           </thead>
           <tbody>
@@ -147,6 +154,31 @@ export function RegistrosTable({
                 <td className="text-ink px-3 py-2.5 text-right tabular-nums">
                   {money(fila.costo_total)}
                 </td>
+                {acciones && (
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-2.5 whitespace-nowrap text-[11px]">
+                      <Link
+                        to={`/registros/${fila.id}/editar`}
+                        className="text-cyan font-semibold underline underline-offset-4"
+                      >
+                        Editar
+                      </Link>
+                      <Link
+                        to={`/productos/${fila.codigo_material}`}
+                        className="text-muted hover:text-ink font-medium underline underline-offset-4"
+                      >
+                        Historial
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => acciones.onEliminar(fila)}
+                        className="font-semibold text-red-300 underline underline-offset-4 hover:text-red-200"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -187,6 +219,29 @@ export function RegistrosTable({
                 </span>
               )}
             </div>
+            {acciones && (
+              <div className="border-border mt-2 flex items-center gap-3 border-t pt-2 text-[11px]">
+                <Link
+                  to={`/registros/${fila.id}/editar`}
+                  className="text-cyan font-semibold underline underline-offset-4"
+                >
+                  Editar
+                </Link>
+                <Link
+                  to={`/productos/${fila.codigo_material}`}
+                  className="text-muted hover:text-ink font-medium underline underline-offset-4"
+                >
+                  Historial
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => acciones.onEliminar(fila)}
+                  className="font-semibold text-red-300 underline underline-offset-4 hover:text-red-200"
+                >
+                  Eliminar
+                </button>
+              </div>
+            )}
           </li>
         ))}
       </ul>

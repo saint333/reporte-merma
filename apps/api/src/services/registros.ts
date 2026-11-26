@@ -1,5 +1,7 @@
-import type { Pool } from "pg";
+import { Decimal } from "decimal.js";
+import type { Pool, PoolClient } from "pg";
 
+import { ErrorApi } from "../http/errores.js";
 import { where, type RegistrosQuery } from "../http/filtros.js";
 
 export type FilaRegistro = {
@@ -20,6 +22,66 @@ export type FilaRegistro = {
   es_duplicado: boolean;
   origen_fila: number | null;
 };
+
+export const CANTIDAD_MAXIMA = new Decimal("999999999999.9999");
+
+export function normalizarCantidad(cruda: string | Decimal): string {
+  let cantidad: Decimal;
+  try {
+    cantidad = new Decimal(cruda);
+  } catch {
+    throw new ErrorApi(
+      "CANTIDAD_INVALIDA",
+      "La cantidad no es numérica.",
+      null,
+      422,
+    );
+  }
+
+  if (!cantidad.isFinite() || cantidad.lte(0) || cantidad.gt(CANTIDAD_MAXIMA)) {
+    throw new ErrorApi(
+      "CANTIDAD_INVALIDA",
+      "La cantidad debe ser mayor que cero y caber en la columna numérica.",
+      null,
+      422,
+    );
+  }
+
+  return cantidad.toFixed(4);
+}
+
+export const COLUMNAS_REGISTRO = `
+  select r.id::int as id,
+         r.fecha::text as fecha,
+         r.semana_iso,
+         r.mes::text as mes,
+         r.codigo_material::int as codigo_material,
+         m.descripcion,
+         m.grupo_material as familia,
+         m.programa,
+         r.cantidad::text as cantidad,
+         m.um,
+         r.motivo_codigo as motivo,
+         mo.gestionabilidad as gestion,
+         mo.area_responsable,
+         r.costo_total::text as costo_total,
+         r.es_duplicado,
+         r.origen_fila
+    from merma.fact_merma r
+    join merma.dim_material m on m.codigo = r.codigo_material
+    join merma.dim_motivo  mo on mo.codigo = r.motivo_codigo`;
+
+export async function consultarRegistroPorId(
+  ejecutor: Pool | PoolClient,
+  id: number,
+): Promise<FilaRegistro | null> {
+  const { rows } = await ejecutor.query<FilaRegistro>(
+    `${COLUMNAS_REGISTRO} where r.id = $1`,
+    [id],
+  );
+
+  return rows[0] ?? null;
+}
 
 const ORDEN: Record<RegistrosQuery["sort"], string> = {
   fecha: "r.fecha",

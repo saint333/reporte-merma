@@ -125,7 +125,36 @@ Content-Type: application/json
 ### 409 REGISTRO_DUPLICADO si ya existe fecha + material + cantidad + motivo
 ### si defines ADMIN_TOKEN en la API, agrega: x-admin-token: <token>
 
-### 21. Errores esperados
+### 21. Detalle de un evento
+GET {{host}}/api/v1/registros/5390
+
+### 22. Editar un evento · recalcula semana, valor unitario, costo y hash
+PATCH {{host}}/api/v1/registros/5390
+Content-Type: application/json
+
+{
+  "cantidad": "10",
+  "motivo": "ROTURA DE EMBALAJES"
+}
+
+### esperado: 200 · data.registro actualizado + snapshot antes/después en el historial
+### 409 REGISTRO_DUPLICADO si la combinación ya existe
+### si defines ADMIN_TOKEN en la API, agrega: x-admin-token: <token>
+
+### 23. Eliminar un evento · el hecho se borra y su rastro queda en el historial
+DELETE {{host}}/api/v1/registros/5390
+
+### esperado: 200 · data.registro con el snapshot eliminado
+
+### 24. Historial de cambios de un evento
+GET {{host}}/api/v1/registros/5390/historial
+
+### 25. Historial por producto · altas, ediciones y eliminaciones del SKU
+GET {{host}}/api/v1/productos/13060001/historial?page=1&per_page=25
+
+### esperado: 200 · meta.material + data con acciones crear/editar/eliminar
+
+### 26. Errores esperados
 GET {{host}}/api/v1/kpis?desde=2026-11-11&hasta=2026-05-08
 
 ### 400 FILTRO_INVALIDO · "desde no puede superar a hasta"
@@ -140,7 +169,7 @@ POST {{host}}/api/v1/cargas?modo=append
 
 ### 400 ARCHIVO_REQUERIDO · sin archivo y sin clave
 
-### 22. Contrato generado
+### 27. Contrato generado
 GET {{host}}/openapi.json
 
 ### Swagger UI: {{host}}/docs

@@ -911,4 +911,291 @@ suite("API contra Postgres de prueba", () => {
 
     await appCarga.close();
   });
+
+  it("GET /registros/:id devuelve el detalle y 404 si no existe", async () => {
+    const lista = await app.inject({
+      method: "GET",
+      url: "/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&per_page=100",
+    });
+    const objetivo = lista
+      .json()
+      .data.find((fila: { fecha: string }) => fila.fecha === "2026-09-29");
+    expect(objetivo).toBeTruthy();
+
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/v1/registros/${objetivo.id}`,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data).toMatchObject({
+      id: objetivo.id,
+      fecha: "2026-09-29",
+      cantidad: "12.5000",
+      motivo: "ROTURA DE EMBALAJES",
+    });
+
+    const noExiste = await app.inject({
+      method: "GET",
+      url: "/api/v1/registros/99999999",
+    });
+    expect(noExiste.statusCode).toBe(404);
+    expect(noExiste.json().error.codigo).toBe("REGISTRO_NO_ENCONTRADO");
+
+    const invalido = await app.inject({
+      method: "GET",
+      url: "/api/v1/registros/abc",
+    });
+    expect(invalido.statusCode).toBe(422);
+    expect(invalido.json().error.codigo).toBe("FILTRO_INVALIDO");
+  });
+
+  it("PATCH /registros/:id recalcula el evento y guarda el antes/después", async () => {
+    const lista = await app.inject({
+      method: "GET",
+      url: "/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&per_page=100",
+    });
+    const objetivo = lista
+      .json()
+      .data.find((fila: { fecha: string }) => fila.fecha === "2026-09-29");
+
+    const res = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/registros/${objetivo.id}`,
+      payload: { cantidad: "20", motivo: "CONTRAMUESTRA" },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data.registro).toMatchObject({
+      id: objetivo.id,
+      fecha: "2026-09-29",
+      semana_iso: 40,
+      cantidad: "20.0000",
+      motivo: "CONTRAMUESTRA",
+      costo_total: "20.0000",
+    });
+
+    const historial = await app.inject({
+      method: "GET",
+      url: `/api/v1/registros/${objetivo.id}/historial`,
+    });
+    expect(historial.statusCode).toBe(200);
+    expect(historial.json().data).toHaveLength(2);
+    expect(historial.json().data[0]).toMatchObject({
+      accion: "editar",
+      fact_id: objetivo.id,
+      datos_anteriores: { cantidad: "12.5000", motivo: "ROTURA DE EMBALAJES" },
+      datos_nuevos: { cantidad: "20.0000", motivo: "CONTRAMUESTRA" },
+    });
+    expect(historial.json().data[1].accion).toBe("crear");
+  });
+
+  it("PATCH /registros/:id rechaza duplicados, catálogos inválidos y cuerpos vacíos", async () => {
+    const lista = await app.inject({
+      method: "GET",
+      url: "/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&per_page=100",
+    });
+    const original = lista
+      .json()
+      .data.find((fila: { fecha: string }) => fila.fecha === "2026-09-01");
+    expect(original).toBeTruthy();
+
+    const duplicado = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/registros/${original.id}`,
+      payload: {
+        fecha: "2026-09-29",
+        cantidad: "20",
+        motivo: "CONTRAMUESTRA",
+      },
+    });
+    expect(duplicado.statusCode).toBe(409);
+    expect(duplicado.json().error.codigo).toBe("REGISTRO_DUPLICADO");
+
+    const material = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/registros/${original.id}`,
+      payload: { codigo_material: 99999999 },
+    });
+    expect(material.statusCode).toBe(422);
+    expect(material.json().error.codigo).toBe("MATERIAL_NO_REGISTRADO");
+
+    const motivo = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/registros/${original.id}`,
+      payload: { motivo: "MOTIVO INVENTADO" },
+    });
+    expect(motivo.statusCode).toBe(422);
+    expect(motivo.json().error.codigo).toBe("MOTIVO_NO_REGISTRADO");
+
+    const vacio = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/registros/${original.id}`,
+      payload: {},
+    });
+    expect(vacio.statusCode).toBe(422);
+    expect(vacio.json().error.codigo).toBe("FILTRO_INVALIDO");
+  });
+
+  it("DELETE /registros/:id elimina el hecho y conserva el historial del producto", async () => {
+    const lista = await app.inject({
+      method: "GET",
+      url: "/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&per_page=100",
+    });
+    const objetivo = lista
+      .json()
+      .data.find((fila: { fecha: string }) => fila.fecha === "2026-09-29");
+
+    const res = await app.inject({
+      method: "DELETE",
+      url: `/api/v1/registros/${objetivo.id}`,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().data.registro).toMatchObject({
+      fecha: "2026-09-29",
+      cantidad: "20.0000",
+    });
+
+    const borrado = await app.inject({
+      method: "GET",
+      url: `/api/v1/registros/${objetivo.id}`,
+    });
+    expect(borrado.statusCode).toBe(404);
+
+    const historial = await app.inject({
+      method: "GET",
+      url: `/api/v1/registros/${objetivo.id}/historial`,
+    });
+    expect(historial.json().data[0]).toMatchObject({
+      accion: "eliminar",
+      datos_nuevos: null,
+      datos_anteriores: { cantidad: "20.0000" },
+    });
+
+    const producto = await app.inject({
+      method: "GET",
+      url: "/api/v1/productos/90000001/historial?per_page=100",
+    });
+    expect(producto.statusCode).toBe(200);
+    expect(producto.json().meta.material).toMatchObject({
+      codigo: 90000001,
+      descripcion: "BOLSA TEST",
+    });
+    expect(
+      producto.json().data.map((cambio: { accion: string }) => cambio.accion),
+    ).toEqual(["eliminar", "editar", "crear"]);
+    expect(producto.json().page.total).toBe(3);
+
+    const inexistente = await app.inject({
+      method: "GET",
+      url: "/api/v1/productos/99999999/historial",
+    });
+    expect(inexistente.statusCode).toBe(404);
+    expect(inexistente.json().error.codigo).toBe("PRODUCTO_NO_ENCONTRADO");
+  });
+
+  it("un cambio de material aparece en el historial de ambos productos", async () => {
+    const lista = await app.inject({
+      method: "GET",
+      url: "/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&codigo=90000002&per_page=100",
+    });
+    const origen = lista
+      .json()
+      .data.find((fila: { cantidad: string }) => fila.cantidad === "30.0000");
+    expect(origen).toBeTruthy();
+
+    const cambio = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/registros/${origen.id}`,
+      payload: { codigo_material: 90000001 },
+    });
+    expect(cambio.statusCode).toBe(200);
+    expect(cambio.json().data.registro).toMatchObject({
+      codigo_material: 90000001,
+      descripcion: "BOLSA TEST",
+      costo_total: "30.0000",
+    });
+
+    const destino = await app.inject({
+      method: "GET",
+      url: "/api/v1/productos/90000001/historial?per_page=100",
+    });
+    const desdeDestino = destino
+      .json()
+      .data.find(
+        (fila: { fact_id: number }) => fila.fact_id === origen.id,
+      );
+    expect(desdeDestino).toMatchObject({
+      accion: "editar",
+      datos_anteriores: { codigo_material: 90000002 },
+      datos_nuevos: { codigo_material: 90000001 },
+    });
+
+    const origenHistorial = await app.inject({
+      method: "GET",
+      url: "/api/v1/productos/90000002/historial?per_page=100",
+    });
+    expect(
+      origenHistorial
+        .json()
+        .data.some(
+          (fila: { fact_id: number; accion: string }) =>
+            fila.fact_id === origen.id && fila.accion === "editar",
+        ),
+    ).toBe(true);
+  });
+
+  it("PATCH y DELETE /registros exigen ADMIN_TOKEN", async () => {
+    const token = "token-de-prueba-123456";
+    const appMutaciones = await buildApp({
+      pool,
+      corsOrigins: ["http://localhost:5173"],
+      logger: false,
+      adminToken: token,
+    });
+
+    const lista = await appMutaciones.inject({
+      method: "GET",
+      url: "/api/v1/registros?desde=2026-09-01&hasta=2026-09-30&per_page=100",
+    });
+    const objetivo = lista
+      .json()
+      .data.find((fila: { fecha: string }) => fila.fecha === "2026-09-08");
+
+    const sinToken = await appMutaciones.inject({
+      method: "PATCH",
+      url: `/api/v1/registros/${objetivo.id}`,
+      payload: { cantidad: "55" },
+    });
+    expect(sinToken.statusCode).toBe(401);
+    expect(sinToken.json().error.codigo).toBe("NO_AUTORIZADO");
+
+    const borrarSinToken = await appMutaciones.inject({
+      method: "DELETE",
+      url: `/api/v1/registros/${objetivo.id}`,
+    });
+    expect(borrarSinToken.statusCode).toBe(401);
+
+    const conToken = await appMutaciones.inject({
+      method: "PATCH",
+      url: `/api/v1/registros/${objetivo.id}`,
+      headers: { "x-admin-token": token },
+      payload: { cantidad: "55" },
+    });
+    expect(conToken.statusCode).toBe(200);
+    expect(conToken.json().data.registro.cantidad).toBe("55.0000");
+
+    const preflight = await appMutaciones.inject({
+      method: "OPTIONS",
+      url: `/api/v1/registros/${objetivo.id}`,
+      headers: {
+        origin: "http://localhost:5173",
+        "access-control-request-method": "DELETE",
+        "access-control-request-headers": "x-admin-token",
+      },
+    });
+    expect(preflight.statusCode).toBeLessThan(300);
+    expect(preflight.headers["access-control-allow-methods"]).toContain("DELETE");
+
+    await appMutaciones.close();
+  });
 });

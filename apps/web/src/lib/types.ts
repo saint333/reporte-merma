@@ -258,3 +258,45 @@ export type CargaHistorial = {
   modo: string | null;
   creada_en: string;
 };
+
+export type SnapshotRegistro = {
+  fecha: string;
+  semana_iso: number;
+  mes: string;
+  codigo_material: number;
+  descripcion: string;
+  cantidad: string;
+  um: string;
+  motivo: string;
+  motivo_original: string | null;
+  valor_unitario: string;
+  costo_total: string;
+  origen_fila: number | null;
+  carga_id?: number;
+};
+
+export type AccionHistorial = "crear" | "editar" | "eliminar";
+
+export type CambioHistorial = {
+  id: number;
+  fact_id: number;
+  codigo_material: number;
+  descripcion: string;
+  accion: AccionHistorial;
+  datos_anteriores: SnapshotRegistro | null;
+  datos_nuevos: SnapshotRegistro | null;
+  cambiado_en: string;
+};
+
+export type EdicionRegistroEntrada = {
+  fecha?: string;
+  codigo_material?: number;
+  cantidad?: string;
+  motivo?: string;
+};
+
+export type HistorialProductoRespuesta = {
+  data: CambioHistorial[];
+  meta: ApiMeta & { material: CatalogoMaterial };
+  page: Pagina;
+};

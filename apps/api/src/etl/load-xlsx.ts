@@ -406,6 +406,51 @@ async function upsertMaestro(
   }
 }
 
+const SNAPSHOT_HISTORIAL = `jsonb_build_object(
+  'fecha', r.fecha::text,
+  'semana_iso', r.semana_iso,
+  'mes', r.mes::text,
+  'codigo_material', r.codigo_material::int,
+  'descripcion', m.descripcion,
+  'cantidad', r.cantidad::text,
+  'um', m.um,
+  'motivo', r.motivo_codigo,
+  'motivo_original', r.motivo_original,
+  'valor_unitario', r.valor_unitario::text,
+  'costo_total', r.costo_total::text,
+  'origen_fila', r.origen_fila
+)`;
+
+async function registrarAltasHistorial(
+  client: PoolClient,
+  cargaId: number,
+): Promise<void> {
+  await client.query(
+    `insert into merma.fact_merma_historial
+       (fact_id, carga_id, codigo_material, accion, datos_anteriores, datos_nuevos)
+     select r.id, r.carga_id, r.codigo_material, 'crear', null, ${SNAPSHOT_HISTORIAL}
+       from merma.fact_merma r
+       join merma.dim_material m on m.codigo = r.codigo_material
+      where r.carga_id = $1`,
+    [cargaId],
+  );
+}
+
+async function registrarBajasHistorial(
+  client: PoolClient,
+  cargaIds: number[],
+): Promise<void> {
+  await client.query(
+    `insert into merma.fact_merma_historial
+       (fact_id, carga_id, codigo_material, accion, datos_anteriores, datos_nuevos)
+     select r.id, r.carga_id, r.codigo_material, 'eliminar', ${SNAPSHOT_HISTORIAL}, null
+       from merma.fact_merma r
+       join merma.dim_material m on m.codigo = r.codigo_material
+      where r.carga_id = any($1::bigint[])`,
+    [cargaIds],
+  );
+}
+
 async function insertarEventos(
   client: PoolClient,
   cargaId: number,
@@ -592,6 +637,7 @@ export async function ejecutar(
         "update merma.carga set estado = 'revertida' where id = any($1::bigint[])",
         [ids],
       );
+      await registrarBajasHistorial(client, ids);
       await client.query(
         "delete from merma.fact_merma where carga_id = any($1::bigint[])",
         [ids],
@@ -603,7 +649,7 @@ export async function ejecutar(
          (archivo, hash_archivo, filas_leidas, filas_insertadas, filas_duplicadas,
           filas_observadas, desde, hasta, estado, detalle)
        values ($1, $2, $3, $4, $5, $6, $7, $8, 'en_proceso', '{}'::jsonb)
-       returning id`,
+       returning id::int as id`,
       [
         reporte.archivo,
         archivoHash,
@@ -620,6 +666,7 @@ export async function ejecutar(
     if (!carga) throw new Error("No se pudo crear la carga");
 
     await insertarEventos(client, carga.id, aInsertar);
+    await registrarAltasHistorial(client, carga.id);
     reporte.insertadas = aInsertar.length;
     reporte.duracion_ms = Date.now() - inicio;
 

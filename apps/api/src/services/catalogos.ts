@@ -9,6 +9,77 @@ export type Catalogos = {
   gestiones: string[];
 };
 
+export type CatalogoMaterial = {
+  codigo: number;
+  descripcion: string;
+  um: string;
+  familia: string;
+  programa: string;
+  valor_unitario: string;
+};
+
+export type CatalogoMotivo = {
+  codigo: string;
+  categoria: string;
+  area_responsable: string;
+  gestionabilidad: string;
+  accion_correctiva: string | null;
+};
+
+export type CatalogosManuales = {
+  materiales: CatalogoMaterial[];
+  motivos: CatalogoMotivo[];
+};
+
+export async function obtenerCatalogosManuales(
+  pool: Pool,
+): Promise<CatalogosManuales> {
+  const [materiales, motivos] = await Promise.all([
+    pool.query<CatalogoMaterial>(
+      `select codigo::int as codigo,
+              descripcion,
+              um,
+              grupo_material as familia,
+              programa,
+              valor_unitario::text as valor_unitario
+         from merma.dim_material
+        where activo
+        order by descripcion, codigo`,
+    ),
+    pool.query<CatalogoMotivo>(
+      `select codigo,
+              categoria,
+              area_responsable,
+              gestionabilidad,
+              accion_correctiva
+         from merma.dim_motivo
+        where activo
+        order by gestionabilidad, codigo`,
+    ),
+  ]);
+
+  return { materiales: materiales.rows, motivos: motivos.rows };
+}
+
+export async function obtenerMaterial(
+  pool: Pool,
+  codigo: number,
+): Promise<CatalogoMaterial | null> {
+  const { rows } = await pool.query<CatalogoMaterial>(
+    `select codigo::int as codigo,
+            descripcion,
+            um,
+            grupo_material as familia,
+            programa,
+            valor_unitario::text as valor_unitario
+       from merma.dim_material
+      where codigo = $1`,
+    [codigo],
+  );
+
+  return rows[0] ?? null;
+}
+
 export async function obtenerCatalogos(pool: Pool): Promise<Catalogos> {
   const [programas, familias, gestiones] = await Promise.all([
     pool.query<{ valor: string }>(

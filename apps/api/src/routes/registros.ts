@@ -4,17 +4,61 @@ import type { Pool } from "pg";
 import { exigirAutorizacion } from "../http/autorizacion.js";
 import {
   filtrosMeta,
+  parseEditarRegistro,
   parseRegistroManual,
   parseRegistros,
 } from "../http/filtros.js";
 import { queryRegistros } from "../http/openapi.js";
+import { leerEnteroPositivo } from "../http/parametros.js";
 import { envelope } from "../http/respuesta.js";
+import {
+  editarRegistro,
+  eliminarRegistro,
+  obtenerRegistro,
+} from "../services/edicion.js";
+import { consultarHistorialRegistro } from "../services/historial.js";
 import { crearRegistroManual } from "../services/manuales.js";
 import {
   consultarRegistros,
   consultarRegistrosCsv,
   type FilaRegistro,
 } from "../services/registros.js";
+
+const paramsId = {
+  type: "object",
+  required: ["id"],
+  properties: {
+    id: {
+      type: "integer",
+      minimum: 1,
+      description: "Identificador del evento de merma.",
+    },
+  },
+  additionalProperties: false,
+} as const;
+
+const propiedadesRegistro = {
+  fecha: {
+    type: "string",
+    pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+    examples: ["2026-11-25"],
+  },
+  codigo_material: {
+    type: "integer",
+    minimum: 1,
+    examples: [10012345],
+  },
+  cantidad: {
+    anyOf: [{ type: "string" }, { type: "number" }],
+    examples: ["12.5"],
+  },
+  motivo: {
+    type: "string",
+    minLength: 1,
+    maxLength: 120,
+    examples: ["ROTURA DE EMBALAJES"],
+  },
+} as const;
 
 const COLUMNAS: { clave: keyof FilaRegistro; titulo: string }[] = [
   { clave: "id", titulo: "id" },
@@ -97,28 +141,7 @@ export function registrarRegistros(
           type: "object",
           additionalProperties: false,
           required: ["fecha", "codigo_material", "cantidad", "motivo"],
-          properties: {
-            fecha: {
-              type: "string",
-              pattern: "^\\d{4}-\\d{2}-\\d{2}$",
-              examples: ["2026-11-25"],
-            },
-            codigo_material: {
-              type: "integer",
-              minimum: 1,
-              examples: [10012345],
-            },
-            cantidad: {
-              anyOf: [{ type: "string" }, { type: "number" }],
-              examples: ["12.5"],
-            },
-            motivo: {
-              type: "string",
-              minLength: 1,
-              maxLength: 120,
-              examples: ["ROTURA DE EMBALAJES"],
-            },
-          },
+          properties: propiedadesRegistro,
         },
       },
     },
@@ -142,6 +165,102 @@ export function registrarRegistros(
       );
 
       return reply.code(201).send(envelope(data));
+    },
+  );
+
+  app.get<{ Params: { id: string } }>(
+    "/api/v1/registros/:id",
+    {
+      attachValidation: true,
+      schema: {
+        tags: ["Registros"],
+        summary: "Detalle de un evento de merma",
+        params: paramsId,
+      },
+    },
+    async (request) => {
+      const id = leerEnteroPositivo(request.params.id, "El id del registro");
+      return envelope(await obtenerRegistro(pool, id));
+    },
+  );
+
+  app.patch<{ Params: { id: string }; Body: unknown }>(
+    "/api/v1/registros/:id",
+    {
+      attachValidation: true,
+      config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
+      schema: {
+        tags: ["Registros"],
+        summary: "Edita un evento de merma",
+        description:
+          "Actualiza los campos enviados, recalcula semana ISO, valor unitario, costo total y hash con las reglas del ETL, y registra el antes/después en el historial. " +
+          "Solo pide x-admin-token si la API define ADMIN_TOKEN.",
+        params: paramsId,
+        body: {
+          type: "object",
+          additionalProperties: false,
+          properties: propiedadesRegistro,
+        },
+      },
+    },
+    async (request) => {
+      exigirAutorizacion(request.headers["x-admin-token"], opciones.adminToken);
+
+      const id = leerEnteroPositivo(request.params.id, "El id del registro");
+      const entrada = parseEditarRegistro(request.body);
+      const registro = await editarRegistro(pool, id, {
+        fecha: entrada.fecha,
+        codigoMaterial: entrada.codigo_material,
+        cantidad: entrada.cantidad,
+        motivo: entrada.motivo,
+      });
+
+      app.cache.limpiar();
+
+      request.log.info({ registro_id: id }, "registro editado");
+      return envelope({ registro });
+    },
+  );
+
+  app.delete<{ Params: { id: string } }>(
+    "/api/v1/registros/:id",
+    {
+      attachValidation: true,
+      config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
+      schema: {
+        tags: ["Registros"],
+        summary: "Elimina un evento de merma",
+        description:
+          "Borra el evento y conserva su rastro en el historial. Solo pide x-admin-token si la API define ADMIN_TOKEN.",
+        params: paramsId,
+      },
+    },
+    async (request) => {
+      exigirAutorizacion(request.headers["x-admin-token"], opciones.adminToken);
+
+      const id = leerEnteroPositivo(request.params.id, "El id del registro");
+      const registro = await eliminarRegistro(pool, id);
+
+      app.cache.limpiar();
+
+      request.log.info({ registro_id: id }, "registro eliminado");
+      return envelope({ registro });
+    },
+  );
+
+  app.get<{ Params: { id: string } }>(
+    "/api/v1/registros/:id/historial",
+    {
+      attachValidation: true,
+      schema: {
+        tags: ["Historial"],
+        summary: "Cambios de un evento de merma",
+        params: paramsId,
+      },
+    },
+    async (request) => {
+      const id = leerEnteroPositivo(request.params.id, "El id del registro");
+      return envelope(await consultarHistorialRegistro(pool, id));
     },
   );
 

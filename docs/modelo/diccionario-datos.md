@@ -2,15 +2,15 @@
 
 Esquema `merma` en PostgreSQL 16. Fuente de verdad: `apps/api/db/migrations/`.
 Este documento describe el estado que dejan `0001_esquema_inicial.sql`,
-`0002_vistas.sql` y `0003_seeds.sql`. Si cambia una migración, actualízalo en el
-mismo commit.
+`0002_vistas.sql`, `0003_seeds.sql` y `0004_historial_registros.sql`. Si cambia
+una migración, actualízalo en el mismo commit.
 
 ```text
 dim_motivo ──< dim_motivo_alias
      │
      └──< fact_merma >── dim_material
-                │
-                └──< carga
+                │              │
+                └──< carga     └──< fact_merma_historial
 parametro (independiente)
 ```
 
@@ -102,7 +102,34 @@ Granularidad: una fila del libro = un evento. 1,795 filas con el archivo actual.
 Índices: `fecha`, `mes`, `semana_iso`, `codigo_material`, `motivo_codigo`,
 `hash_fila` y uno parcial sobre `es_duplicado = true`.
 
-## 6. `merma.parametro` — parámetros de escenario
+Los eventos se pueden editar y eliminar desde la web. Una edición recalcula
+`semana_iso`, `mes`, `valor_unitario`, `costo_total` y `hash_fila`; una
+autocorrección del material mueve el hecho sin romper la FK.
+
+## 6. `merma.fact_merma_historial` — auditoría de cambios
+
+Registra altas, ediciones y eliminaciones. No tiene FK hacia `fact_merma` porque
+el hecho puede eliminarse y su rastro debe conservarse.
+
+| Columna | Tipo | Nulo | Default | Descripción |
+|---|---|---|---|---|
+| `id` | `bigserial` | no | — | PK. |
+| `fact_id` | `bigint` | no | — | Id del evento; puede ya no existir. |
+| `carga_id` | `bigint` | sí | — | FK → `carga.id`; carga de origen del evento. |
+| `codigo_material` | `bigint` | no | — | FK → `dim_material.codigo`; producto destino del cambio. |
+| `accion` | `text` | no | — | `crear`, `editar` o `eliminar`. |
+| `datos_anteriores` | `jsonb` | sí | — | Snapshot del evento antes del cambio. |
+| `datos_nuevos` | `jsonb` | sí | — | Snapshot después del cambio. |
+| `cambiado_en` | `timestamptz` | no | `now()` | Marca de tiempo. |
+
+Índices: `(codigo_material, cambiado_en desc)`, `(fact_id, cambiado_en desc)` y
+`(cambiado_en desc)`. La migración 0004 inserta una línea base `crear` para cada
+evento existente, con la fecha de su carga. El ETL también registra las altas de
+cada carga y las bajas que produce un `replace`. Un cambio de material aparece
+en el historial del producto de origen (por `datos_anteriores`) y del destino
+(por `codigo_material`).
+
+## 7. `merma.parametro` — parámetros de escenario
 
 | Clave | Valor | Etiqueta | Uso |
 |---|---|---|---|
@@ -113,7 +140,7 @@ Granularidad: una fila del libro = un evento. 1,795 filas con el archivo actual.
 Las rutas de proyección aceptan `meta_reduccion`, `semanas_restantes` y
 `umbral_atipico` como query params; si faltan, se usan estos valores.
 
-## 7. Vistas
+## 8. Vistas
 
 ### `merma.v_registro`
 
@@ -138,11 +165,12 @@ con funciones de ventana —no con el orden físico de las filas—.
 | `participacion_acumulada` | acumulado ordenado por `costo desc, codigo_material` |
 | `clase_abc` | `<= 0.80` → `A (Crítico)`; `<= 0.95` → `B (Moderado)`; resto `C (Bajo)`; costo 0 → `Sin Merma` |
 
-## 8. Reglas que dependen del esquema
+## 9. Reglas que dependen del esquema
 
 - **Costo:** siempre `cantidad * valor_unitario`, con `numeric` (nunca coma flotante).
 - **Semana:** ISO-8601; el pico del periodo es S40, no S39.
 - **Idempotencia:** `carga.hash_archivo` para el archivo y `fact_merma.hash_fila` para la fila.
 - **Duplicados:** se marcan y se suman; el total debe seguir cuadrando con el libro.
 - **Reversión:** `replace` pasa la carga anterior a `revertida` y borra sus hechos por `carga_id`.
+- **Auditoría:** toda alta manual, edición o eliminación escribe un snapshot antes/después en `fact_merma_historial`; el borrado del hecho no borra su historial.
 - **Catálogos:** un material o motivo inactivo no se borra; los hechos históricos lo siguen referenciando.

@@ -111,12 +111,24 @@ export const esquemaRegistroManual = z.strictObject({
   motivo: z.string().trim().min(1).max(120),
 });
 
+export const esquemaEditarRegistro = z
+  .strictObject({
+    fecha: fecha.optional(),
+    codigo_material: z.coerce.number().int().positive().optional(),
+    cantidad: cantidadManual.optional(),
+    motivo: z.string().trim().min(1).max(120).optional(),
+  })
+  .refine((valor) => Object.keys(valor).length > 0, {
+    message: "Envía al menos un campo para editar.",
+  });
+
 export type Filtros = z.infer<typeof baseFiltros>;
 export type RegistrosQuery = z.infer<typeof esquemaRegistros>;
 export type ParetoQuery = z.infer<typeof esquemaPareto>;
 export type SerieSemanalQuery = z.infer<typeof esquemaSerieSemanal>;
 export type ProyeccionQuery = z.infer<typeof esquemaProyeccion>;
 export type RegistroManualBody = z.infer<typeof esquemaRegistroManual>;
+export type EditarRegistroBody = z.infer<typeof esquemaEditarRegistro>;
 
 function parseConEsquema<T>(esquema: z.ZodType<T>, query: unknown): T {
   const resultado = esquema.safeParse(query);
@@ -157,6 +169,10 @@ export function parseProyeccion(query: unknown): ProyeccionQuery {
 
 export function parseRegistroManual(body: unknown): RegistroManualBody {
   return parseConEsquema(esquemaRegistroManual, body);
+}
+
+export function parseEditarRegistro(body: unknown): EditarRegistroBody {
+  return parseConEsquema(esquemaEditarRegistro, body);
 }
 
 export function where(filtros: Filtros): { sql: string; params: unknown[] } {

@@ -128,5 +128,13 @@ suite("ETL contra Postgres de prueba", () => {
       "select count(*)::int as n from merma.fact_merma",
     );
     expect(hechos.rows[0]?.n).toBe(2);
+
+    const historial = await pool.query<{ accion: string; n: number }>(
+      "select accion, count(*)::int as n from merma.fact_merma_historial group by accion order by accion",
+    );
+    expect(historial.rows).toEqual([
+      { accion: "crear", n: 4 },
+      { accion: "eliminar", n: 2 },
+    ]);
   });
 });

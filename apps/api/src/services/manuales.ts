@@ -1,6 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
 
-import { Decimal } from "decimal.js";
 import type { Pool } from "pg";
 
 import { costoTotal } from "../etl/dinero.js";
@@ -8,7 +7,12 @@ import { semanaISO } from "../etl/fechas.js";
 import { hashFila } from "../etl/hash.js";
 import { normalizar } from "../etl/reglas.js";
 import { ErrorApi } from "../http/errores.js";
-import type { FilaRegistro } from "./registros.js";
+import { leerSnapshot, registrarCambio } from "./historial.js";
+import {
+  consultarRegistroPorId,
+  normalizarCantidad,
+  type FilaRegistro,
+} from "./registros.js";
 
 export type RegistroManualEntrada = {
   fecha: string;
@@ -22,55 +26,11 @@ export type RegistroManualCreado = {
   registro: FilaRegistro;
 };
 
-const CANTIDAD_MAXIMA = new Decimal("999999999999.9999");
-
-const COLUMNAS_REGISTRO = `
-  select r.id::int as id,
-         r.fecha::text as fecha,
-         r.semana_iso,
-         r.mes::text as mes,
-         r.codigo_material::int as codigo_material,
-         m.descripcion,
-         m.grupo_material as familia,
-         m.programa,
-         r.cantidad::text as cantidad,
-         m.um,
-         r.motivo_codigo as motivo,
-         mo.gestionabilidad as gestion,
-         mo.area_responsable,
-         r.costo_total::text as costo_total,
-         r.es_duplicado,
-         r.origen_fila
-    from merma.fact_merma r
-    join merma.dim_material m on m.codigo = r.codigo_material
-    join merma.dim_motivo  mo on mo.codigo = r.motivo_codigo`;
-
 export async function crearRegistroManual(
   pool: Pool,
   entrada: RegistroManualEntrada,
 ): Promise<RegistroManualCreado> {
-  let cantidad: Decimal;
-  try {
-    cantidad = new Decimal(entrada.cantidad);
-  } catch {
-    throw new ErrorApi(
-      "CANTIDAD_INVALIDA",
-      "La cantidad no es numérica.",
-      null,
-      422,
-    );
-  }
-
-  if (!cantidad.isFinite() || cantidad.lte(0) || cantidad.gt(CANTIDAD_MAXIMA)) {
-    throw new ErrorApi(
-      "CANTIDAD_INVALIDA",
-      "La cantidad debe ser mayor que cero y caber en la columna numérica.",
-      null,
-      422,
-    );
-  }
-
-  const cantidadNormalizada = cantidad.toFixed(4);
+  const cantidadNormalizada = normalizarCantidad(entrada.cantidad);
   const motivoCodigo = normalizar(entrada.motivo);
   const client = await pool.connect();
 
@@ -131,7 +91,7 @@ export async function crearRegistroManual(
       );
     }
 
-    const costo = costoTotal(cantidad, material.valor_unitario);
+    const costo = costoTotal(cantidadNormalizada, material.valor_unitario);
     const hashArchivo = createHash("sha256")
       .update(`${hash}|${randomUUID()}`)
       .digest("hex");
@@ -182,14 +142,22 @@ export async function crearRegistroManual(
     const creado = creados[0];
     if (!creado) throw new Error("No se pudo insertar el registro manual");
 
-    const { rows } = await client.query<FilaRegistro>(
-      `${COLUMNAS_REGISTRO} where r.id = $1`,
-      [creado.id],
-    );
+    const despues = await leerSnapshot(client, creado.id);
+    if (!despues) throw new Error("No se pudo leer el registro manual");
+
+    await registrarCambio(client, {
+      factId: creado.id,
+      cargaId: carga.id,
+      codigoMaterial: entrada.codigoMaterial,
+      accion: "crear",
+      antes: null,
+      despues,
+    });
+
+    const registro = await consultarRegistroPorId(client, creado.id);
 
     await client.query("commit");
 
-    const registro = rows[0];
     if (!registro) throw new Error("No se pudo leer el registro manual");
 
     return { carga_id: carga.id, registro };

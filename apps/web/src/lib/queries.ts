@@ -6,6 +6,7 @@ import type {
   Alerta,
   CargaHistorial,
   Catalogos,
+  HistorialProductoRespuesta,
   Envelope,
   FilaCorte,
   FilaPareto,
@@ -189,6 +190,38 @@ export function alertasQuery(filtros: Filtros) {
         paramsFiltros(filtros),
         signal,
       ).then((respuesta) => respuesta.data),
+    ...COMUN,
+  });
+}
+
+export function registroQuery(id: number) {
+  return queryOptions({
+    queryKey: ["registro", id],
+    queryFn: ({ signal }) =>
+      getJson<Envelope<Registro>>(
+        `/api/v1/registros/${id}`,
+        {},
+        signal,
+      ).then((respuesta) => respuesta.data),
+    enabled: Number.isInteger(id) && id > 0,
+    ...COMUN,
+  });
+}
+
+export function historialProductoQuery(
+  codigo: number,
+  page: number,
+  perPage = 25,
+) {
+  return queryOptions({
+    queryKey: ["historial-producto", codigo, page, perPage],
+    queryFn: ({ signal }) =>
+      getJson<HistorialProductoRespuesta>(
+        `/api/v1/productos/${codigo}/historial`,
+        { page, per_page: perPage },
+        signal,
+      ),
+    enabled: Number.isInteger(codigo) && codigo > 0,
     ...COMUN,
   });
 }

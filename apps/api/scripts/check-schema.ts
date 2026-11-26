@@ -17,7 +17,7 @@ const sql = await readFile(path.join(directorio, "check_schema.sql"), "utf8");
 const pool = new Pool({ connectionString: databaseUrl, max: 1 });
 
 const esperado = {
-  tablas: 6,
+  tablas: 7,
   vistas: 2,
   motivos: 13,
   alias: 1,
