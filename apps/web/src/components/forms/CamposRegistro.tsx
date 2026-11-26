@@ -55,11 +55,13 @@ function aISO(fecha: Date | null): string {
 
 export function CamposRegistro({
   catalogos,
+  ordenMotivos = [],
   valores,
   onCambio,
   deshabilitado = false,
 }: {
   catalogos: Catalogos;
+  ordenMotivos?: string[];
   valores: ValoresRegistro;
   onCambio: (parcial: Partial<ValoresRegistro>) => void;
   deshabilitado?: boolean;
@@ -98,10 +100,17 @@ export function CamposRegistro({
 
   function buscarMotivos(evento: { query: string }) {
     const consulta = evento.query.trim().toUpperCase();
+    const usoMotivo = new Map(ordenMotivos.map((codigo, indice) => [codigo, indice]));
+    const ordenados = catalogos.motivos
+      .map((fila) => fila.codigo)
+      .sort(
+        (a, b) =>
+          (usoMotivo.get(a) ?? Number.MAX_SAFE_INTEGER) -
+          (usoMotivo.get(b) ?? Number.MAX_SAFE_INTEGER),
+      );
 
     setSugerenciasMotivo(
-      catalogos.motivos
-        .map((fila) => fila.codigo)
+      ordenados
         .filter((codigo) => !consulta || codigo.includes(consulta))
         .slice(0, 12),
     );

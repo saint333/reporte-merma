@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "primereact/button";
 import { Message } from "primereact/message";
@@ -17,13 +17,27 @@ import { Skeleton } from "primereact/skeleton";
 import { crearRegistroManual } from "../lib/api";
 import { hoyLima } from "../lib/fechas";
 import { dateLabel, decimal, money4 } from "../lib/formatters";
-import { catalogosQuery, registrosQuery } from "../lib/queries";
+import {
+  catalogosQuery,
+  corteQuery,
+  registrosQuery,
+} from "../lib/queries";
 import type { RegistroManualCreado } from "../lib/types";
 
 export default function NuevoRegistroPage() {
   const queryClient = useQueryClient();
   const catalogos = useQuery(catalogosQuery);
   const hoy = hoyLima();
+  const inicioMes = `${hoy.slice(0, 7)}-01`;
+  const motivosMes = useQuery(
+    corteQuery("motivos", { desde: inicioMes, hasta: hoy }),
+  );
+  // El corte viene ordenado por costo descendente (API); los motivos del mes
+  // con más merma aparecen primero en el desplegable.
+  const ordenMotivos = useMemo(
+    () => (motivosMes.data?.data ?? []).map((fila) => fila.clave),
+    [motivosMes.data],
+  );
   const registrosHoy = useQuery(
     registrosQuery({
       desde: hoy,
@@ -126,6 +140,7 @@ export default function NuevoRegistroPage() {
             <form onSubmit={(evento) => void enviar(evento)}>
               <CamposRegistro
                 catalogos={catalogos.data}
+                ordenMotivos={ordenMotivos}
                 valores={valores}
                 onCambio={cambiar}
                 deshabilitado={enviando}
