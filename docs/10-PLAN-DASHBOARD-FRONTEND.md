@@ -102,8 +102,8 @@ Marcar cada casilla al terminar. Orden recomendado: de la base visual hacia lo f
 **Criterio de aceptación:** ningún gráfico se corta ni se desborda en 360 px; los tooltips respetan la paleta.
 
 ### Fase 5 — Curva ABC
-- [ ] Nuevo `components/charts/ParetoCurva.tsx`: barras de costo por SKU + línea de acumulado (`ComposedChart`), con línea de referencia al 80 %.
-- [ ] Colocarlo en la sección Pareto, arriba de la tabla, en la vista de escritorio.
+- [x] Nuevo `components/charts/ParetoCurva.tsx`: barras de costo por SKU + línea de acumulado (`ComposedChart`), con línea de referencia al 80 %.
+- [x] Colocarlo en la sección Pareto, arriba de la tabla, en la vista de escritorio.
 
 **Criterio de aceptación:** la línea de 80 % coincide con el corte A/B de la tabla.
 

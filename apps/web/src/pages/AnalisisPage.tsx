@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { ChartCard } from "../components/charts/ChartCard";
 import { MonthlyBars } from "../components/charts/MonthlyBars";
+import { ParetoCurva } from "../components/charts/ParetoCurva";
 import { WeeklyLine } from "../components/charts/WeeklyLine";
 import { ErrorState } from "../components/feedback/ErrorState";
 import { PageHeader } from "../components/layout/PageHeader";
@@ -185,6 +186,18 @@ export default function AnalisisPage() {
           )}
         </ChartCard>
       </div>
+
+      {!pareto.isPending && !pareto.error && (
+        <div className="hidden lg:block">
+          <ChartCard
+            titulo="Curva ABC"
+            subtitulo="Costo por SKU y acumulado; la línea roja marca el corte del 80 %"
+            altura="alta"
+          >
+            <ParetoCurva filas={pareto.data?.data ?? []} />
+          </ChartCard>
+        </div>
+      )}
 
       <Card
         header={
