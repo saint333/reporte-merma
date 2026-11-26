@@ -232,10 +232,10 @@ export default function NuevoRegistroPage() {
                   onClick={() => setCreado(null)}
                 />
                 <Link
-                  to="/registros"
+                  to={`/registros?desde=${creado.registro.fecha}&hasta=${creado.registro.fecha}&q=${creado.registro.codigo_material}`}
                   className="text-cyan text-xs font-semibold underline underline-offset-4"
                 >
-                  Ver el detalle de registros
+                  Ver este registro en Registros
                 </Link>
               </div>
             </Card>
