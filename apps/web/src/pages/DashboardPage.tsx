@@ -71,6 +71,7 @@ export default function DashboardPage() {
       <KpiStrip
         kpis={kpis.data}
         proyeccion={proyeccion.data}
+        serieMensual={mensual.data?.data}
         cargando={kpis.isPending}
         error={kpis.error}
         onRetry={() => void kpis.refetch()}

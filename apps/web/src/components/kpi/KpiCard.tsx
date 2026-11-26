@@ -3,6 +3,9 @@ import { useState, type ReactNode } from "react";
 import { cx } from "../../lib/cx";
 import { Skeleton } from "primereact/skeleton";
 import { Tooltip } from "primereact/tooltip";
+import { Area, AreaChart, ResponsiveContainer } from "recharts";
+
+import { COLORES } from "../../lib/theme";
 
 type Tono = "cyan" | "orange" | "purple" | "green" | "amber" | "red";
 
@@ -32,6 +35,8 @@ export function KpiCard({
   cargando = false,
   icono,
   tooltip,
+  sparkline,
+  tendencia,
 }: {
   etiqueta: string;
   valor: ReactNode;
@@ -40,6 +45,8 @@ export function KpiCard({
   cargando?: boolean;
   icono?: ReactNode;
   tooltip?: string;
+  sparkline?: number[];
+  tendencia?: number | null;
 }) {
   const [iconoEl, setIconoEl] = useState<HTMLSpanElement | null>(null);
 
@@ -79,9 +86,40 @@ export function KpiCard({
           >
             {valor}
           </p>
+          {tendencia !== undefined && tendencia !== null && (
+            <p
+              className={cx(
+                "mt-1 text-xs font-semibold tabular-nums",
+                tendencia > 0 ? "text-red" : "text-green",
+              )}
+            >
+              {tendencia > 0 ? "▲" : "▼"}{" "}
+              {Math.abs(tendencia * 100).toFixed(1)}% vs. semana anterior
+            </p>
+          )}
           {detalle && (
             <div className="text-muted mt-1 text-xs leading-relaxed">
               {detalle}
+            </div>
+          )}
+          {sparkline && sparkline.length > 1 && (
+            <div className="mt-3 h-10 w-full" aria-hidden="true">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={sparkline.map((valor, indice) => ({ indice, valor }))}
+                  margin={{ top: 2, right: 0, left: 0, bottom: 0 }}
+                >
+                  <Area
+                    type="monotone"
+                    dataKey="valor"
+                    stroke={COLORES.cyan}
+                    fill={COLORES.cyan}
+                    fillOpacity={0.15}
+                    strokeWidth={1.5}
+                    isAnimationActive={false}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           )}
         </>

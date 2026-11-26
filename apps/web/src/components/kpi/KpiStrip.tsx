@@ -4,19 +4,21 @@ import {
   money,
   percent,
 } from "../../lib/formatters";
-import type { Kpis, Proyeccion } from "../../lib/types";
+import type { Kpis, Proyeccion, SerieMensual } from "../../lib/types";
 import { ErrorState } from "../feedback/ErrorState";
 import { KpiCard } from "./KpiCard";
 
 export function KpiStrip({
   kpis,
   proyeccion,
+  serieMensual,
   cargando,
   error,
   onRetry,
 }: {
   kpis?: Kpis;
   proyeccion?: Proyeccion;
+  serieMensual?: SerieMensual[];
   cargando: boolean;
   error?: unknown;
   onRetry?: () => void;
@@ -46,6 +48,8 @@ export function KpiStrip({
         cargando={cargando}
         icono={<i className="pi pi-dollar text-lg" />}
         tooltip="Costo total de merma en el rango seleccionado"
+        sparkline={serieMensual?.map((fila) => Number(fila.costo))}
+        tendencia={kpis?.variacion_ultima_semana}
       />
       <KpiCard
         etiqueta="Controlable"
