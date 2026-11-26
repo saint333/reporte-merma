@@ -1,21 +1,33 @@
+import { useRef, useState } from "react";
+import { Button } from "primereact/button";
+import { Column } from "primereact/column";
+import { DataTable } from "primereact/datatable";
+import { InputText } from "primereact/inputtext";
+import { ProgressBar } from "primereact/progressbar";
 import { Tag } from "primereact/tag";
 
+import { cx } from "../../lib/cx";
 import { integer, money, percent } from "../../lib/formatters";
 import type { FilaPareto } from "../../lib/types";
 
-function BarraAcumulado({ valor }: { valor: string }) {
+function severidadAbc(clase: string) {
+  if (clase.startsWith("A")) return "danger" as const;
+  if (clase.startsWith("B")) return "warning" as const;
+  return undefined;
+}
+
+function EtiquetaAbc({ clase }: { clase: string }) {
+  const severidad = severidadAbc(clase);
+
   return (
-    <div className="flex items-center gap-2">
-      <div className="bg-border h-1.5 w-20 overflow-hidden rounded-full">
-        <div
-          className="bg-cyan h-full rounded-full"
-          style={{ width: `${Math.min(100, Number(valor) * 100)}%` }}
-        />
-      </div>
-      <span className="text-muted text-[11px] tabular-nums">
-        {percent(Number(valor), 2)}
-      </span>
-    </div>
+    <Tag
+      value={clase.slice(0, 1)}
+      severity={severidad}
+      className={cx(
+        "tag-app w-6 justify-center",
+        !severidad && "tag-app-neutral",
+      )}
+    />
   );
 }
 
@@ -26,156 +38,181 @@ export function ParetoTable({
   filas: FilaPareto[];
   onSeleccionar?: (fila: FilaPareto) => void;
 }) {
-  function activar(fila: FilaPareto) {
-    onSeleccionar?.(fila);
-  }
+  const [busqueda, setBusqueda] = useState("");
+  const tabla = useRef<DataTable<FilaPareto[]>>(null);
 
   return (
     <div>
-      <div className="border-border hidden overflow-x-auto rounded-md border md:block">
-        <table className="w-full border-collapse text-left text-xs">
-          <thead>
-            <tr className="bg-header/80 text-muted border-border border-b text-[10px] tracking-[0.08em] uppercase">
-              <th className="px-3 py-2.5 font-medium">#</th>
-              <th className="px-3 py-2.5 font-medium">Código</th>
-              <th className="px-3 py-2.5 font-medium">Descripción</th>
-              <th className="px-3 py-2.5 font-medium">Familia</th>
-              <th className="px-3 py-2.5 text-right font-medium">Eventos</th>
-              <th className="px-3 py-2.5 text-right font-medium">Costo</th>
-              <th className="px-3 py-2.5 text-right font-medium">% part.</th>
-              <th className="px-3 py-2.5 font-medium">Acumulado</th>
-              <th className="px-3 py-2.5 font-medium">Clase</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filas.map((fila) => (
-              <tr
-                key={fila.codigo}
-                tabIndex={onSeleccionar ? 0 : undefined}
-                onClick={() => activar(fila)}
-                onKeyDown={(evento) => {
-                  if (!onSeleccionar) return;
-                  if (evento.key === "Enter" || evento.key === " ") {
-                    evento.preventDefault();
-                    activar(fila);
-                  }
-                }}
-                className={`border-border/60 border-b transition-colors last:border-0 ${
-                  onSeleccionar
-                    ? "hover:bg-header/60 focus-visible:ring-cyan focus-visible:ring-inset cursor-pointer focus-visible:ring-2 focus-visible:outline-none"
-                    : ""
-                }`}
-              >
-                <td
-                  className={`px-3 py-2.5 tabular-nums ${
-                    fila.clase_abc.startsWith("A")
-                      ? "border-l-2 border-l-red"
-                      : ""
-                  }`}
-                >
-                  {fila.rank}
-                </td>
-                <td className="text-muted px-3 py-2.5 font-mono text-[11px]">
-                  {fila.codigo}
-                </td>
-                <td className="text-ink max-w-[280px] truncate px-3 py-2.5">
-                  {fila.descripcion}
-                </td>
-                <td className="text-muted px-3 py-2.5">{fila.familia}</td>
-                <td className="text-muted px-3 py-2.5 text-right tabular-nums">
-                  {integer(fila.eventos)}
-                </td>
-                <td className="text-ink px-3 py-2.5 text-right tabular-nums">
-                  {money(fila.costo)}
-                </td>
-                <td className="text-muted px-3 py-2.5 text-right tabular-nums">
-                  {percent(Number(fila.participacion), 2)}
-                </td>
-                <td className="px-3 py-2.5">
-                  <BarraAcumulado valor={fila.acumulado} />
-                </td>
-                <td className="px-3 py-2.5">
-                  <Tag
-                    value={fila.clase_abc.slice(0, 1)}
-                    severity={
-                      fila.clase_abc.startsWith("A")
-                        ? "danger"
-                        : fila.clase_abc.startsWith("B")
-                          ? "warning"
-                          : undefined
-                    }
-                    className={`tag-app w-6 justify-center ${
-                      fila.clase_abc.startsWith("A") ||
-                      fila.clase_abc.startsWith("B")
-                        ? ""
-                        : "tag-app-neutral"
-                    }`}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="relative w-full sm:w-64">
+          <i
+            aria-hidden="true"
+            className="pi pi-search text-muted pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-xs"
+          />
+          <InputText
+            value={busqueda}
+            onChange={(evento) => setBusqueda(evento.target.value)}
+            placeholder="Buscar SKU, familia o programa"
+            aria-label="Buscar en el Pareto"
+            className="w-full pl-8 text-xs"
+          />
+        </div>
+        <Button
+          type="button"
+          label="CSV"
+          icon="pi pi-download"
+          size="small"
+          outlined
+          severity="secondary"
+          aria-label="Exportar el Pareto a CSV"
+          onClick={() => tabla.current?.exportCSV()}
+        />
       </div>
 
-      <ul className="space-y-2 md:hidden">
-        {filas.map((fila) => (
-          <li key={fila.codigo}>
-            <button
+      <DataTable
+        ref={tabla}
+        value={filas}
+        dataKey="codigo"
+        size="small"
+        stripedRows
+        responsiveLayout="stack"
+        breakpoint="768px"
+        globalFilter={busqueda}
+        globalFilterFields={["codigo", "descripcion", "familia", "programa"]}
+        paginator={filas.length > 10}
+        rows={10}
+        rowsPerPageOptions={[10, 25, 50]}
+        paginatorTemplate="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+        currentPageReportTemplate="{first}–{last} de {totalRecords}"
+        emptyMessage="Sin datos para el filtro actual"
+        onRowClick={(evento) => onSeleccionar?.(evento.data as FilaPareto)}
+        rowClassName={() => cx(onSeleccionar && "cursor-pointer transition-colors")}
+        className="text-xs"
+      >
+      <Column
+        field="rank"
+        header="#"
+        style={{ minWidth: "3.5rem" }}
+        body={(fila: FilaPareto) => (
+          <span
+            className={cx(
+              "tabular-nums",
+              fila.clase_abc.startsWith("A") && "text-ink font-semibold",
+            )}
+          >
+            {fila.rank}
+          </span>
+        )}
+      />
+      <Column
+        field="codigo"
+        header="Código"
+        style={{ minWidth: "6.5rem" }}
+        body={(fila: FilaPareto) => (
+          <span className="text-muted font-mono text-[11px]">{fila.codigo}</span>
+        )}
+      />
+      <Column
+        field="descripcion"
+        header="Descripción"
+        style={{ minWidth: "14rem" }}
+        body={(fila: FilaPareto) => (
+          <span className="text-ink block max-w-70 truncate">
+            {fila.descripcion}
+          </span>
+        )}
+      />
+      <Column
+        field="familia"
+        header="Familia"
+        style={{ minWidth: "7rem" }}
+        body={(fila: FilaPareto) => (
+          <span className="text-muted">{fila.familia}</span>
+        )}
+      />
+      <Column
+        field="eventos"
+        header="Eventos"
+        align="right"
+        alignHeader="right"
+        style={{ minWidth: "5.5rem" }}
+        body={(fila: FilaPareto) => (
+          <span className="text-muted tabular-nums">
+            {integer(fila.eventos)}
+          </span>
+        )}
+      />
+      <Column
+        field="costo"
+        header="Costo"
+        align="right"
+        alignHeader="right"
+        style={{ minWidth: "7rem" }}
+        body={(fila: FilaPareto) => (
+          <span className="text-ink tabular-nums">{money(fila.costo)}</span>
+        )}
+      />
+      <Column
+        field="participacion"
+        header="% part."
+        align="right"
+        alignHeader="right"
+        style={{ minWidth: "5rem" }}
+        body={(fila: FilaPareto) => (
+          <span className="text-muted tabular-nums">
+            {percent(Number(fila.participacion), 2)}
+          </span>
+        )}
+      />
+      <Column
+        field="acumulado"
+        header="Acumulado"
+        style={{ minWidth: "9rem" }}
+        body={(fila: FilaPareto) => {
+          const valor = Math.min(100, Number(fila.acumulado) * 100);
+
+          return (
+            <div className="flex items-center gap-2">
+              <ProgressBar
+                value={valor}
+                showValue={false}
+                style={{ height: "6px", width: "80px" }}
+              />
+              <span className="text-muted text-[11px] tabular-nums">
+                {percent(Number(fila.acumulado), 2)}
+              </span>
+            </div>
+          );
+        }}
+      />
+      <Column
+        field="clase_abc"
+        header="Clase"
+        style={{ minWidth: "4.5rem" }}
+        body={(fila: FilaPareto) => <EtiquetaAbc clase={fila.clase_abc} />}
+      />
+      {onSeleccionar && (
+        <Column
+          header=""
+          style={{ minWidth: "3rem" }}
+          body={(fila: FilaPareto) => (
+            <Button
               type="button"
-              onClick={() => activar(fila)}
-              className="border-border bg-header/40 w-full rounded-md border p-3 text-left"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-muted font-mono text-[10px]">
-                    #{fila.rank} · {fila.codigo}
-                  </p>
-                  <p className="text-ink mt-1 truncate text-xs font-medium">
-                    {fila.descripcion}
-                  </p>
-                </div>
-                <Tag
-                  value={fila.clase_abc.slice(0, 1)}
-                  severity={
-                    fila.clase_abc.startsWith("A")
-                      ? "danger"
-                      : fila.clase_abc.startsWith("B")
-                        ? "warning"
-                        : undefined
-                  }
-                  className={`tag-app w-6 justify-center ${
-                    fila.clase_abc.startsWith("A") ||
-                    fila.clase_abc.startsWith("B")
-                      ? ""
-                      : "tag-app-neutral"
-                  }`}
-                />
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
-                <span>
-                  <span className="text-muted block">Costo</span>
-                  <span className="text-ink tabular-nums">
-                    {money(fila.costo)}
-                  </span>
-                </span>
-                <span>
-                  <span className="text-muted block">Part.</span>
-                  <span className="text-ink tabular-nums">
-                    {percent(Number(fila.participacion), 2)}
-                  </span>
-                </span>
-                <span>
-                  <span className="text-muted block">Acum.</span>
-                  <span className="text-ink tabular-nums">
-                    {percent(Number(fila.acumulado), 2)}
-                  </span>
-                </span>
-              </div>
-            </button>
-          </li>
-        ))}
-      </ul>
+              icon="pi pi-arrow-right"
+              text
+              rounded
+              size="small"
+              severity="info"
+              aria-label={`Ver detalle de ${fila.codigo}`}
+              onClick={(evento) => {
+                evento.stopPropagation();
+                onSeleccionar(fila);
+              }}
+            />
+          )}
+        />
+      )}
+      </DataTable>
     </div>
   );
 }

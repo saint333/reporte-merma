@@ -66,27 +66,29 @@ Problemas detectados:
 Marcar cada casilla al terminar. Orden recomendado: de la base visual hacia lo funcional.
 
 ### Fase 1 — Base de secciones y KPIs
-- [ ] Crear `components/layout/SectionCard.tsx` (título, subtítulo, acción, `Badge` opcional) basado en `Card` de PrimeReact.
-- [ ] Reemplazar los `Card` con header manual de `DashboardPage.tsx` (Alertas, Pareto, Matriz) por `SectionCard`.
-- [ ] Hacer que `ChartCard` use `SectionCard` internamente.
-- [ ] Pasar iconos PrimeIcons en `KpiStrip` a `KpiCard`.
-- [ ] Agregar `Tooltip` a las KPI con la definición del indicador.
+- [x] Crear `components/layout/SectionCard.tsx` (título, subtítulo, acción, `Badge` opcional) basado en `Card` de PrimeReact.
+- [x] Reemplazar los `Card` con header manual de `DashboardPage.tsx` (Alertas, Pareto, Matriz) por `SectionCard`.
+- [x] Hacer que `ChartCard` use `SectionCard` internamente.
+- [x] Pasar iconos PrimeIcons en `KpiStrip` a `KpiCard`.
+- [x] Agregar `Tooltip` a las KPI con la definición del indicador.
 
 **Criterio de aceptación:** todas las tarjetas del dashboard tienen el mismo encabezado; los KPIs muestran icono; sin cambios de datos.
 
 ### Fase 2 — KPIs con contexto visual
-- [ ] Agregar sparkline opcional a `KpiCard` (Recharts `LineChart` mínimo, sin ejes), alimentado por `serieMensual`.
-- [ ] Mostrar tendencia solo si la API tiene comparación de periodo; si no, dejar nota en este documento.
+- [x] Agregar sparkline opcional a `KpiCard` (Recharts `AreaChart` mínimo, sin ejes), alimentado por `serieMensual`.
+- [x] Mostrar tendencia solo si la API tiene comparación de periodo; si no, dejar nota en este documento.
+
+**Nota de la Fase 2:** la API ya expone `variacion_ultima_semana` (`apps/api/src/services/kpis.ts`): fracción de cambio del costo de la última semana del rango contra la anterior. Por eso la tendencia se muestra como "vs. semana anterior" y no contra un periodo histórico; comparar contra un periodo previo requeriría un campo nuevo en la API. El tooltip de PrimeReact no acepta un `ref`, así que `KpiCard` lo resuelve con estado y el callback de ref del icono.
 
 **Criterio de aceptación:** cada KPI de costo muestra su mini tendencia; en estado de carga se muestra `Skeleton` también para el sparkline.
 
 ### Fase 3 — Tabla Pareto con DataTable
-- [ ] Reemplazar `ParetoTable` (tabla HTML + lista móvil) por `DataTable` de PrimeReact con `responsiveLayout="stack"`.
-- [ ] Columnas: rank, código, descripción, familia, eventos, costo, participación, acumulado (con `ProgressBar`), clase ABC (`Tag`).
-- [ ] Unificar la severidad ABC en un único helper (`claseAbcSeveridad`).
-- [ ] Mantener `onRowClick` → `ParetoDrawer`, con soporte de teclado nativo de `DataTable`.
-- [ ] Agregar paginador (10 filas) y filtro global.
-- [ ] Botón exportar CSV (función nativa de `DataTable`).
+- [x] Reemplazar `ParetoTable` (tabla HTML + lista móvil) por `DataTable` de PrimeReact con `responsiveLayout="stack"`.
+- [x] Columnas: rank, código, descripción, familia, eventos, costo, participación, acumulado (con `ProgressBar`), clase ABC (`Tag`).
+- [x] Unificar la severidad ABC en un único helper (`claseAbcSeveridad`).
+- [x] Mantener `onRowClick` → `ParetoDrawer`, con soporte de teclado nativo de `DataTable`.
+- [x] Agregar paginador (10 filas) y filtro global.
+- [x] Botón exportar CSV (función nativa de `DataTable`).
 
 **Criterio de aceptación:** misma información que hoy; en móvil cada fila se apila; el drawer sigue abriéndose con clic y con Enter.
 
