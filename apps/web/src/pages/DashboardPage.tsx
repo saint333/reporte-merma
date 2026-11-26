@@ -117,14 +117,17 @@ export default function DashboardPage() {
                 ) : undefined
               }
             >
-              <AlertList
-                alertas={alertas.data}
-                filtros={filtros}
-                cargando={alertas.isPending}
-                error={alertas.error}
-                failureCount={alertas.failureCount}
-                onRetry={() => void alertas.refetch()}
-              />
+              {/* En xl, la lista no puede superar el alto del gráfico de la misma fila (300 px). */}
+              <div className="xl:max-h-[300px] xl:overflow-y-auto xl:pr-1">
+                <AlertList
+                  alertas={alertas.data}
+                  filtros={filtros}
+                  cargando={alertas.isPending}
+                  error={alertas.error}
+                  failureCount={alertas.failureCount}
+                  onRetry={() => void alertas.refetch()}
+                />
+              </div>
             </SectionCard>
           </div>
 
