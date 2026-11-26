@@ -71,10 +71,8 @@
 .p-card {
   background: var(--surface-card);
   border: 1px solid var(--surface-border);
-  border-radius: var(--radius-card, 10px);
-  box-shadow:
-    0 1px 0 0 rgba(148, 163, 184, 0.08) inset,
-    0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
   color: var(--text-color);
 }
 
@@ -133,10 +131,7 @@
 }
 
 /* PrimeReact · escala compacta para igualar la densidad de la app. */
-.p-component {
-  font-size: 0.75rem;
-}
-
+.p-component,
 .p-inputtext,
 .p-dropdown,
 .p-dropdown-label,
@@ -155,18 +150,11 @@
 .p-message,
 .p-dialog,
 .p-dialog-content,
-.p-datatable {
-  font-size: 0.75rem;
-}
-
+.p-datatable,
 .p-button,
 .p-button .p-button-label,
-.p-button.p-button-sm {
-  font-size: 0.75rem;
-}
-
 .p-button .p-button-icon,
-.p-button.p-button-sm .p-button-icon {
+.p-datepicker {
   font-size: 0.75rem;
 }
 
@@ -178,22 +166,18 @@
   font-size: 0.625rem;
 }
 
+.p-datatable .p-datatable-thead > tr > th,
+.p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.5rem 0.75rem;
+}
+
 .p-datatable .p-datatable-thead > tr > th {
   font-size: 0.625rem;
-}
-
-.p-datatable .p-datatable-tbody > tr > td {
-  font-size: 0.75rem;
-}
-
-.p-datepicker {
-  font-size: 0.75rem;
 }
 
 .p-datepicker table td > span {
   width: 2rem;
   height: 2rem;
-  font-size: 0.75rem;
 }
 
 .p-inputtext,
@@ -219,6 +203,7 @@
 
 .p-button.p-button-sm {
   padding: 0.375rem 0.625rem;
+  font-size: 0.75rem;
 }
 
 .p-button.p-button-icon-only {
@@ -257,11 +242,6 @@
 
 .p-message .p-message-icon {
   font-size: 0.875rem;
-}
-
-.p-datatable .p-datatable-thead > tr > th,
-.p-datatable .p-datatable-tbody > tr > td {
-  padding: 0.5rem 0.75rem;
 }
 
 /* Ripple más sutil y sin interferir con los clics. */

@@ -108,7 +108,7 @@ Marcar cada casilla al terminar. Orden recomendado: de la base visual hacia lo f
 **Criterio de aceptación:** la línea de 80 % coincide con el corte A/B de la tabla.
 
 ### Fase 6 — Limpieza de estilos
-- [ ] Reducir en `styles.css` los selectores `.p-*` a los necesarios, usando variables de PrimeReact (`--primary-color`, `--surface-*`) para el tema.
+- [x] Reducir en `styles.css` los selectores `.p-*` a los necesarios, usando variables de PrimeReact (`--primary-color`, `--surface-*`) para el tema.
 - [ ] Eliminar clases `tag-app` / `tag-app-neutral` si ya no son necesarias.
 - [ ] Revisar contraste de texto `muted` sobre `surface` (WCAG AA).
 
