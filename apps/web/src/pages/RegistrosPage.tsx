@@ -68,6 +68,8 @@ export default function RegistrosPage() {
   const { filtros } = useFiltros();
   const [searchParams, setSearchParams] = useSearchParams();
   const qUrl = searchParams.get("q") ?? "";
+  const motivoUrl = searchParams.get("motivo") || undefined;
+  const codigoUrl = searchParams.get("codigo") || undefined;
   const [busqueda, setBusqueda] = useState(qUrl);
   const [exportando, setExportando] = useState(false);
   const [errorCsv, setErrorCsv] = useState<string | null>(null);
@@ -109,6 +111,8 @@ export default function RegistrosPage() {
       sort,
       order,
       q: qUrl || undefined,
+      motivo: motivoUrl,
+      codigo: codigoUrl,
     }),
   );
 
@@ -189,6 +193,8 @@ export default function RegistrosPage() {
       await descargarCsv({
         ...paramsFiltros(filtros),
         q: qUrl,
+        motivo: motivoUrl,
+        codigo: codigoUrl,
       });
     } catch (error) {
       setErrorCsv(
